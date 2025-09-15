@@ -1,0 +1,1406 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Sistema de Consultas</title>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #f5f7fa;
+      --panel: #ffffff;
+      --card: #ffffff;
+      --text: #1f2937;
+      --muted: #6b7280;
+      --primary: #2563eb;
+      --primary-600: #1d4ed8;
+      --ok: #22c55e;
+      --warn: #f59e0b;
+      --alert: #ef4444;
+      --grid-soft: rgba(0, 0, 0, .06);
+      --shadow: 0 4px 20px rgba(0, 0, 0, .08);
+      --radius: 12px;
+      --green: #10b981;
+      --cyan: #06b6d4;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #8b5cf6;
+      --pink: #ec4899;
+    }
+
+    body.dark {
+      --bg: #0f172a;
+      --panel: #1e293b;
+      --card: #1f2a3b;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-600: #2563eb;
+      --ok: #34d399;
+      --warn: #fbbf24;
+      --alert: #f87171;
+      --grid-soft: rgba(255, 255, 255, .08);
+      --shadow: 0 8px 24px rgba(0, 0, 0, .35);
+      --green: #34d399;
+      --cyan: #22d3ee;
+      --red: #f87171;
+      --blue: #60a5fa;
+      --purple: #a78bfa;
+      --pink: #f472b6;
+    }
+
+    * {
+      box-sizing: border-box
+    }
+
+    body {
+      margin: 0;
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text)
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 1fr;
+      min-height: 100vh
+    }
+
+    .menu-toggle {
+      position: fixed;
+      top: 15px;
+      left: 15px;
+      z-index: 2000;
+      background: var(--primary);
+      color: #fff;
+      border: none;
+      padding: 10px 14px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 1rem;
+      box-shadow: var(--shadow)
+    }
+
+    .sidebar {
+      position: fixed;
+      top: 0;
+      left: 0;
+      height: 100%;
+      width: 260px;
+      background: var(--panel);
+      border-right: 1px solid var(--grid-soft);
+      padding: 24px 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transform: translateX(-100%);
+      transition: transform .3s ease;
+      z-index: 1500
+    }
+
+    .sidebar.show {
+      transform: translateX(0)
+    }
+
+    .brand {
+      font-weight: 600
+    }
+
+    .nav {
+      display: flex;
+      flex-direction: column;
+      gap: 10px
+    }
+
+    .nav-btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--grid-soft);
+      padding: 12px 14px;
+      border-radius: 12px;
+      cursor: pointer;
+      text-align: left;
+      transition: .2s
+    }
+
+    .nav-btn:hover {
+      transform: translateY(-1px)
+    }
+
+    .nav-btn.active {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary-600)
+    }
+
+    .theme-toggle {
+      margin-top: auto
+    }
+
+    .content {
+      padding: 28px;
+      max-width: 1200px;
+      width: 100%;
+      margin-top: 60px
+    }
+
+    .header h1 {
+      margin: 0 0 6px;
+      font-size: 1.6rem
+    }
+
+    .header p {
+      margin: 0 0 16px;
+      color: var(--muted)
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--grid-soft);
+      border-radius: var(--radius);
+      padding: 18px;
+      box-shadow: var(--shadow)
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 14px 16px
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px
+    }
+
+    .form-group.full {
+      grid-column: 1 / -1
+    }
+
+    label {
+      font-size: .92rem
+    }
+
+    input,
+    select,
+    textarea {
+      background: var(--panel);
+      border: 1px solid var(--grid-soft);
+      color: var(--text);
+      border-radius: 10px;
+      padding: 10px 12px;
+      outline: none;
+      transition: border-color .2s, box-shadow .2s
+    }
+
+    input:focus,
+    select:focus,
+    textarea:focus {
+      border-color: rgba(37, 99, 235, .45);
+      box-shadow: 0 0 0 3px rgba(37, 99, 235, .18)
+    }
+
+    .actions {
+      grid-column: 1 / -1;
+      display: flex;
+      gap: 10px;
+      justify-content: space-between;
+      align-items: center;
+      flex-wrap: wrap
+    }
+
+    .btn {
+      background: var(--panel);
+      color: var(--text);
+      border: 1px solid var(--grid-soft);
+      padding: 10px 14px;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: .2s
+    }
+
+    .btn:hover {
+      transform: translateY(-1px)
+    }
+
+    .btn.primary {
+      background: var(--primary);
+      color: #fff;
+      border-color: var(--primary-600)
+    }
+
+    .btn.danger {
+      background: #ef4444;
+      color: #fff;
+      border-color: #dc2626
+    }
+
+    .tab {
+      display: none
+    }
+
+    .tab.active {
+      display: block
+    }
+
+    .list {
+      display: grid;
+      gap: 12px;
+      margin-top: 16px
+    }
+
+    .item {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr auto;
+      align-items: start;
+      transition: opacity .35s ease, transform .35s ease
+    }
+
+    .item.fade-out {
+      opacity: 0;
+      transform: translateX(-18px)
+    }
+
+    .badge {
+      background: rgba(0, 0, 0, .03);
+      border: 1px solid var(--grid-soft);
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-weight: 600;
+      font-size: .9rem
+    }
+
+    .status {
+      padding: 4px 8px;
+      border-radius: 999px;
+      font-weight: 700;
+      font-size: .8rem
+    }
+
+    .st-normal {
+      background: rgba(34, 197, 94, .12);
+      color: var(--ok);
+      border: 1px solid rgba(34, 197, 94, .25)
+    }
+
+    .st-atencao {
+      background: rgba(245, 158, 11, .12);
+      color: var(--warn);
+      border: 1px solid rgba(245, 158, 11, .25)
+    }
+
+    .st-alerta {
+      background: rgba(239, 68, 68, .12);
+      color: var(--alert);
+      border: 1px solid rgba(239, 68, 68, .25)
+    }
+
+    .meta {
+      color: var(--muted);
+      font-size: .92rem
+    }
+
+    .vals {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px 16px
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 12px;
+      margin-bottom: 16px
+    }
+
+    .stat {
+      padding: 12px;
+      border-radius: 10px;
+      background: rgba(0, 0, 0, .03);
+      border: 1px solid var(--grid-soft)
+    }
+
+    .stat .title {
+      color: var(--muted);
+      font-size: .85rem
+    }
+
+    .stat .value {
+      font-weight: 700;
+      font-size: 1.1rem;
+      margin-top: 4px
+    }
+
+    .filters {
+      display: grid;
+      grid-template-columns: repeat(8, 1fr);
+      gap: 14px;
+      margin-bottom: 16px
+    }
+
+    .check-group {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: center
+    }
+
+    .check-group label {
+      display: inline-flex;
+      gap: 6px;
+      align-items: center;
+      padding: 6px 10px;
+      border: 1px solid var(--grid-soft);
+      border-radius: 999px;
+      background: rgba(0, 0, 0, .03);
+      font-size: .9rem
+    }
+
+    .chart-wrap {
+      overflow: hidden
+    }
+
+    .toast {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%) translateY(20px);
+      background: #111827;
+      color: #fff;
+      padding: 12px 16px;
+      border-radius: 10px;
+      box-shadow: var(--shadow);
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity .4s, transform .4s;
+      z-index: 1000
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateX(-50%) translateY(0)
+    }
+
+    .hint {
+      color: var(--muted);
+      font-size: .9rem
+    }
+
+    @media (min-width:901px) {
+      .sidebar {
+        transform: translateX(0);
+        position: relative
+      }
+
+      .menu-toggle {
+        display: none
+      }
+
+      .app {
+        grid-template-columns: 260px 1fr
+      }
+
+      .content {
+        margin-top: 0
+      }
+    }
+
+    @media (max-width:1100px) {
+      .filters {
+        grid-template-columns: repeat(5, 1fr)
+      }
+
+      .stats {
+        grid-template-columns: repeat(3, 1fr)
+      }
+    }
+
+    @media (max-width:700px) {
+      .form-grid {
+        grid-template-columns: 1fr
+      }
+
+      .filters {
+        grid-template-columns: 1fr
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <button id="btnMenu" class="menu-toggle">☰ Menu</button>
+    <aside class="sidebar" id="sidebar"><br><br><br>
+      <div class="brand">APP DO KAKÁ</div>
+      <nav class="nav">
+        <button class="nav-btn" data-tab="meusdados" onclick="mostrarAba('meusdados', this)">MEUS DADOS</button>
+        <button class="nav-btn active" data-tab="inicio" onclick="mostrarAba('inicio', this)">RESUMO</button>
+        <button class="nav-btn" data-tab="cadastro" onclick="mostrarAba('cadastro', this)">REGISTRO</button>
+        <button class="nav-btn" data-tab="historico" onclick="mostrarAba('historico', this)">HISTÓRICO</button>
+      </nav>
+      <div class="theme-toggle">
+        <button class="btn" onclick="alternarTema()">🌙/☀️ Tema</button>
+      </div>
+    </aside>
+
+    <main class="content">
+      <!-- INÍCIO -->
+      <section id="inicio" class="tab active">
+        <header class="header">
+          <h1>Resumo</h1>
+          <p class="hint">Índice de saúde, estatísticas, comparativos, previsão e insights</p>
+        </header>
+
+        <div class="stats">
+          <div class="stat">
+            <div class="title">Índice de saúde</div>
+            <div class="value" id="resumoScore">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Glicemia média</div>
+            <div class="value" id="resumoGlicemia">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">BPM médio</div>
+            <div class="value" id="resumoBPM">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Pressão média</div>
+            <div class="value" id="resumoPressao">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Colesterol médio</div>
+            <div class="value" id="resumoCol">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Triglicerídeos médios</div>
+            <div class="value" id="resumoTri">-</div>
+          </div>
+        </div>
+
+        <div class="card" id="blocoComparativo">
+          <h3 style="margin:0 0 8px">Comparativo do mês</h3>
+          <div class="vals" id="comparativoConteudo" style="margin-top:6px"></div>
+          <div id="previsaoConteudo" style="margin-top:10px;color:var(--muted)"></div>
+        </div>
+
+        <div class="card"
+          style="margin-top:12px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+          <div style="flex:1">
+            <h3 style="margin:0 0 10px">Últimos registros</h3>
+            <div id="ultimosRegistros"></div>
+          </div>
+          <div style="min-width:210px; text-align:right">
+            <div class="hint" style="margin-bottom:8px">Emergência</div>
+            <a id="btnEmergencia" href="tel:192" class="btn danger" style="display:none">📞 Ligar agora</a>
+            <div id="emergenciaHint" class="hint" style="margin-top:8px"></div>
+          </div>
+        </div>
+
+        <div class="card" id="alertasPainel"
+          style="display:none; background:#fee2e2; border-color:#fecaca; margin-top:12px">
+          <strong>⚠ Atenção:</strong> Valores fora da faixa no último registro.
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3 style="margin:0 0 8px">Alertas inteligentes</h3>
+          <div id="alertasInteligentes" class="vals"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3 style="margin:0 0 8px">Alertas preditivos (próx. 2 semanas)</h3>
+          <div id="alertasPreditivos" class="vals"></div>
+        </div>
+
+        <div class="card" style="margin-top:12px">
+          <h3 style="margin:0 0 8px">Correlação BPM x Glicemia</h3>
+          <div class="vals" id="corrResumo" style="margin-bottom:8px"></div>
+          <div style="height:300px"><canvas id="scatterCorr"></canvas></div>
+        </div>
+
+        <!-- Relatório sazonal removido
+      <div class="card" style="margin-top:12px">
+        <h3 style="margin:0 0 8px">Relatório sazonal</h3>
+        <div id="sazonalConteudo" class="vals"></div>
+      </div>
+      -->
+      </section>
+
+      <!-- CADASTRO -->
+      <section id="cadastro" class="tab">
+        <header class="header">
+          <h1>Registrar medida</h1>
+          <p class="hint">Os dados ficam no seu navegador.</p>
+        </header>
+        <form id="consultaForm" class="card form-grid">
+          <div class="form-group"><label for="glicemia">Glicemia (mg/dL)</label><input type="number" id="glicemia"
+              min="0"></div>
+          <div class="form-group"><label for="pressao">Pressão arterial (mmHg)</label><input type="text" id="pressao"
+              placeholder="Ex: 120/80"></div>
+          <div class="form-group"><label for="bpm">BPM (freq. cardíaca)</label><input type="number" id="bpm" min="0">
+          </div>
+          <div class="form-group"><label for="colesterol">Colesterol (mg/dL)</label><input type="number" id="colesterol"
+              min="0"></div>
+          <div class="form-group"><label for="triglicerideos">Triglicerídeos (mg/dL)</label><input type="number"
+              id="triglicerideos" min="0"></div>
+          <div class="form-group"><label for="data">Data</label><input type="date" id="data"></div>
+          <div class="form-group"><label for="hora">Hora</label><input type="time" id="hora"></div>
+          <div class="form-group full"><label for="obs">Observações</label><textarea id="obs" rows="3"
+              placeholder="Ex: em jejum, após caminhada, etc."></textarea></div>
+          <div class="actions">
+            <div>
+              <button type="submit" id="btnSalvar" class="btn primary">Salvar</button>
+              <button type="button" class="btn" onclick="salvarPDF()">Salvar em PDF</button>
+              <button type="button" id="btnCancelarEdicao" class="btn" style="display:none"
+                onclick="cancelarEdicao()">Cancelar edição</button>
+            </div>
+            <small id="modoEdicaoHint" class="hint" style="display:none">Editando um registro existente</small>
+          </div>
+        </form>
+      </section>
+
+      <!-- HISTÓRICO -->
+      <section id="historico" class="tab">
+        <header class="header">
+          <h1>Histórico</h1>
+          <p class="hint">Filtros, gráfico, classificação automática e projeções.</p>
+        </header>
+
+        <div class="card filters">
+          <div class="form-group"><label for="dataInicio">Data inicial</label><input type="date" id="dataInicio"
+              onchange="carregarConsultas()"></div>
+          <div class="form-group"><label for="dataFim">Data final</label><input type="date" id="dataFim"
+              onchange="carregarConsultas()"></div>
+          <div class="form-group"><label for="ordenacao">Ordenar</label><select id="ordenacao"
+              onchange="carregarConsultas()">
+              <option value="desc">Mais recentes</option>
+              <option value="asc">Mais antigos</option>
+            </select></div>
+          <div class="form-group"><label for="buscaTexto">Busca</label><input type="text" id="buscaTexto"
+              placeholder="Obs, pressão, etc." oninput="carregarConsultas()"></div>
+          <div class="form-group"><label for="filtroClass">Classificação</label>
+            <select id="filtroClass" onchange="carregarConsultas()">
+              <option value="todas">Todas</option>
+              <option value="normal">Normal</option>
+              <option value="atencao">Atenção</option>
+              <option value="alerta">Alerta</option>
+            </select>
+          </div>
+          <div class="form-group"><label>Métricas</label>
+            <div class="check-group">
+              <label><input type="checkbox" id="chkGlicemia" checked onchange="carregarConsultas()"> Glicemia</label>
+              <label><input type="checkbox" id="chkBPM" checked onchange="carregarConsultas()"> BPM</label>
+              <label><input type="checkbox" id="chkPressao" checked onchange="carregarConsultas()"> Pressão</label>
+              <label><input type="checkbox" id="chkCol" checked onchange="carregarConsultas()"> Colesterol</label>
+              <label><input type="checkbox" id="chkTri" checked onchange="carregarConsultas()"> Triglicerídeos</label>
+            </div>
+          </div>
+          <div class="form-group"><label for="agrupamento">Visualizar por</label><select id="agrupamento"
+              onchange="carregarConsultas()">
+              <option value="diario">Diário</option>
+              <option value="semanal">Semanal</option>
+              <option value="mensal">Mensal</option>
+            </select></div>
+        </div>
+
+        <div class="stats" id="statsWrap">
+          <div class="stat">
+            <div class="title">Glicemia média</div>
+            <div class="value" id="statGlicemia">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">BPM médio</div>
+            <div class="value" id="statBPM">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Pressão média (SYS/DIA)</div>
+            <div class="value" id="statPressao">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Colesterol médio</div>
+            <div class="value" id="statCol">-</div>
+          </div>
+          <div class="stat">
+            <div class="title">Triglicerídeos médios</div>
+            <div class="value" id="statTri">-</div>
+          </div>
+        </div>
+
+        <div class="card chart-wrap"><canvas id="grafico"></canvas></div>
+        <div id="listaConsultas" class="list"></div>
+      </section>
+
+      <!-- MEUS DADOS -->
+      <section id="meusdados" class="tab">
+        <header class="header">
+          <h1>Meus Dados</h1>
+          <p class="hint">Informações pessoais, lembretes, limites e contato de emergência.</p>
+        </header>
+
+        <form id="formMeusDados" class="card form-grid">
+          <div class="form-group full"><label for="md_nome">Nome</label><input type="text" id="md_nome"></div>
+          <div class="form-group full"><label for="md_endereco">Endereço</label><input type="text" id="md_endereco"
+              placeholder="Rua, número, bairro"></div>
+          <div class="form-group"><label for="md_telefone">Telefone</label><input type="tel" id="md_telefone"
+              placeholder="(DDD) 9XXXX-XXXX"></div>
+          <div class="form-group"><label for="md_idade">Idade</label><input type="number" id="md_idade" min="0"
+              placeholder="Ex: 35"></div>
+          <div class="form-group full"><label for="md_tipo">Tipo Sanguíneo</label>
+            <select id="md_tipo">
+              <option value="">Selecione</option>
+              <option>O+</option>
+              <option>O-</option>
+              <option>A+</option>
+              <option>A-</option>
+              <option>B+</option>
+              <option>B-</option>
+              <option>AB+</option>
+              <option>AB-</option>
+            </select>
+          </div>
+
+          <div class="form-group"><label for="md_emergencia">Telefone de emergência</label><input type="tel"
+              id="md_emergencia" placeholder="Ex: 192 (SAMU) ou um contato"></div>
+
+          <div class="form-group full">
+            <hr style="border:none;border-top:1px solid var(--grid-soft)"><strong>Limites personalizados</strong><span
+              class="hint"> para classificação automática</span>
+          </div>
+
+          <div class="form-group"><label for="lim_glic_norm">Glicemia Normal até</label><input type="number"
+              id="lim_glic_norm" placeholder="Ex: 110"></div>
+          <div class="form-group"><label for="lim_glic_at">Glicemia Atenção até</label><input type="number"
+              id="lim_glic_at" placeholder="Ex: 139"></div>
+
+          <div class="form-group"><label for="lim_bpm_norm">BPM Normal até</label><input type="number" id="lim_bpm_norm"
+              placeholder="Ex: 100"></div>
+          <div class="form-group"><label for="lim_bpm_at">BPM Atenção até</label><input type="number" id="lim_bpm_at"
+              placeholder="Ex: 110"></div>
+
+          <div class="form-group"><label for="lim_sys_norm">SYS Normal até</label><input type="number" id="lim_sys_norm"
+              placeholder="Ex: 129"></div>
+          <div class="form-group"><label for="lim_sys_at">SYS Atenção até</label><input type="number" id="lim_sys_at"
+              placeholder="Ex: 139"></div>
+
+          <div class="form-group"><label for="lim_dia_norm">DIA Normal até</label><input type="number" id="lim_dia_norm"
+              placeholder="Ex: 84"></div>
+          <div class="form-group"><label for="lim_dia_at">DIA Atenção até</label><input type="number" id="lim_dia_at"
+              placeholder="Ex: 89"></div>
+
+          <div class="form-group"><label for="lim_col_norm">Colesterol Normal até</label><input type="number"
+              id="lim_col_norm" placeholder="Ex: 200"></div>
+          <div class="form-group"><label for="lim_col_at">Colesterol Atenção até</label><input type="number"
+              id="lim_col_at" placeholder="Ex: 239"></div>
+
+          <div class="form-group"><label for="lim_tri_norm">Triglicerídeos Normal até</label><input type="number"
+              id="lim_tri_norm" placeholder="Ex: 150"></div>
+          <div class="form-group"><label for="lim_tri_at">Triglicerídeos Atenção até</label><input type="number"
+              id="lim_tri_at" placeholder="Ex: 199"></div>
+
+          <div class="form-group full">
+            <hr style="border:none;border-top:1px solid var(--grid-soft)"><strong>Lembretes</strong>
+          </div>
+          <div class="form-group"><label for="md_lembretes">Horários (HH:MM separados por vírgula)</label><input
+              type="text" id="md_lembretes" placeholder="Ex: 08:00, 14:00, 20:30"></div>
+          <div class="form-group"><label>Notificações</label>
+            <div class="check-group"><label><input type="checkbox" id="md_habilitar"> Habilitar lembretes</label><button
+                type="button" class="btn" onclick="pedirPermissaoNotificacao()">Permitir notificações</button></div>
+          </div>
+
+          <div class="actions"><button type="submit" class="btn primary">Salvar Dados</button></div>
+        </form>
+      </section>
+    </main>
+  </div>
+
+  <div id="toast" class="toast">Salvo com sucesso</div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    /* ========= Constantes & Utils ========= */
+    const STORAGE_KEY = "consultas";
+    const PROFILE_KEY = "meusDados";
+    const LIMITS_KEY = "limitesPersonalizados";
+    const THEME_KEY = "tema";
+    const $ = (s) => document.querySelector(s);
+    const $$ = (s) => Array.from(document.querySelectorAll(s));
+    let editId = null, grafico = null, scatter = null;
+
+    /* Datas BR */
+    function formatarDataBR(iso) { if (!iso) return ""; const [a, m, d] = iso.split("-"); return `${d}/${m}/${a}`; }
+    function showToast(msg = "Tudo certo!") { const t = $("#toast"); t.textContent = msg; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 1600) }
+    function getCss(v) { return getComputedStyle(document.documentElement).getPropertyValue(v).trim() }
+    function getConsultas() { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]") }
+    function setConsultas(a) { localStorage.setItem(STORAGE_KEY, JSON.stringify(a)) }
+
+    /* Menu retrátil */
+    const sidebar = $("#sidebar"), btnMenu = $("#btnMenu");
+    btnMenu.addEventListener("click", () => sidebar.classList.toggle("show"));
+    document.addEventListener("click", (e) => { const wide = matchMedia("(min-width:901px)").matches; if (!wide && sidebar.classList.contains("show") && !sidebar.contains(e.target) && !btnMenu.contains(e.target)) sidebar.classList.remove("show"); });
+    $$(".nav-btn").forEach(b => b.addEventListener("click", () => { if (!matchMedia("(min-width:901px)").matches) sidebar.classList.remove("show"); }));
+
+    /* Tema */
+    function aplicarTemaInicial() { const pref = localStorage.getItem(THEME_KEY) || (matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'); document.body.classList.toggle('dark', pref === 'dark'); }
+    function alternarTema() { const dark = !document.body.classList.contains('dark'); document.body.classList.toggle('dark', dark); localStorage.setItem(THEME_KEY, dark ? 'dark' : 'light'); carregarResumo(); carregarConsultas(); }
+    window.alternarTema = alternarTema;
+
+    /* Parsing e limites */
+    function parsePressao(t) { const m = (t || "").match(/(\d+)\s*\/\s*(\d+)/); return m ? { sys: +m[1], dia: +m[2] } : { sys: null, dia: null } }
+    function limitesDefaults() {
+      return {
+        glicemia: { normalMax: 110, atencaoMax: 139 },
+        bpm: { normalMax: 100, atencaoMax: 110 },
+        pressao: { sysNormalMax: 129, sysAtencaoMax: 139, diaNormalMax: 84, diaAtencaoMax: 89 },
+        colesterol: { normalMax: 200, atencaoMax: 239 },
+        triglicerideos: { normalMax: 150, atencaoMax: 199 }
+      };
+    }
+    function getLimites() { return JSON.parse(localStorage.getItem(LIMITS_KEY) || "null") || limitesDefaults(); }
+    function setLimites(l) { localStorage.setItem(LIMITS_KEY, JSON.stringify(l)); }
+
+    /* Classificação automática */
+    function classificarValor(tipo, valor, lim) {
+      if (valor == null || Number.isNaN(valor)) return null;
+      if (tipo === "glicemia") { if (valor <= lim.glicemia.normalMax) return "normal"; if (valor <= lim.glicemia.atencaoMax) return "atencao"; return "alerta"; }
+      if (tipo === "bpm") { if (valor <= lim.bpm.normalMax) return "normal"; if (valor <= lim.bpm.atencaoMax) return "atencao"; return "alerta"; }
+      if (tipo === "sys") { if (valor <= lim.pressao.sysNormalMax) return "normal"; if (valor <= lim.pressao.sysAtencaoMax) return "atencao"; return "alerta"; }
+      if (tipo === "dia") { if (valor <= lim.pressao.diaNormalMax) return "normal"; if (valor <= lim.pressao.diaAtencaoMax) return "atencao"; return "alerta"; }
+      if (tipo === "colesterol") { if (valor <= lim.colesterol.normalMax) return "normal"; if (valor <= lim.colesterol.atencaoMax) return "atencao"; return "alerta"; }
+      if (tipo === "triglicerideos") { if (valor <= lim.triglicerideos.normalMax) return "normal"; if (valor <= lim.triglicerideos.atencaoMax) return "atencao"; return "alerta"; }
+      return null;
+    }
+    function classToBadge(cls) { if (!cls) return ""; const map = { normal: "st-normal", atencao: "st-atencao", alerta: "st-alerta" }; const label = { normal: "Normal", atencao: "Atenção", alerta: "Alerta" }; return `<span class="status ${map[cls]}">${label[cls]}</span>`; }
+    function classOverall(c, lim) {
+      const g = classificarValor("glicemia", +c.glicemia, lim);
+      const b = classificarValor("bpm", +c.bpm, lim);
+      const { sys, dia } = parsePressao(c.pressao);
+      const s = classificarValor("sys", sys, lim);
+      const d = classificarValor("dia", dia, lim);
+      const col = classificarValor("colesterol", +c.colesterol, lim);
+      const tri = classificarValor("triglicerideos", +c.triglicerideos, lim);
+      const vals = [g, s, d, b, col, tri].filter(Boolean);
+      if (vals.includes("alerta")) return "alerta";
+      if (vals.includes("atencao")) return "atencao";
+      if (vals.length === 0) return null;
+      return "normal";
+    }
+
+    /* Índice composto de saúde (0-100) */
+    function calcularScore(c, lim) {
+      function normalizar(valor, normalMax, atencaoMax) {
+        if (valor == null || Number.isNaN(+valor)) return 100;
+        if (valor <= normalMax) return 100;
+        if (valor >= atencaoMax) return 0;
+        return Math.round(100 - ((valor - normalMax) / (atencaoMax - normalMax)) * 100);
+      }
+      const { sys, dia } = parsePressao(c.pressao);
+      const scores = [
+        normalizar(+c.glicemia, lim.glicemia.normalMax, lim.glicemia.atencaoMax),
+        normalizar(+c.bpm, lim.bpm.normalMax, lim.bpm.atencaoMax),
+        normalizar(sys, lim.pressao.sysNormalMax, lim.pressao.sysAtencaoMax),
+        normalizar(dia, lim.pressao.diaNormalMax, lim.pressao.diaAtencaoMax),
+        normalizar(+c.colesterol, lim.colesterol.normalMax, lim.colesterol.atencaoMax),
+        normalizar(+c.triglicerideos, lim.triglicerideos.normalMax, lim.triglicerideos.atencaoMax)
+      ].filter(v => v != null);
+      if (!scores.length) return null;
+      return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
+    }
+
+    /* Tabs */
+    function mostrarAba(id, btn) {
+      $$(".tab").forEach(t => t.classList.remove("active")); $("#" + id).classList.add("active");
+      if (btn) { $$(".nav-btn").forEach(b => b.classList.remove("active")); btn.classList.add("active"); } else { const b = $(`.nav-btn[data-tab="${id}"]`); if (b) { $$(".nav-btn").forEach(x => x.classList.remove("active")); b.classList.add("active"); } }
+      if (id === "inicio") carregarResumo();
+      if (id === "historico") carregarConsultas();
+    }
+    window.mostrarAba = mostrarAba;
+
+    /* Cadastro */
+    const form = $("#consultaForm"), btnSalvar = $("#btnSalvar"), btnCancelar = $("#btnCancelarEdicao"), hint = $("#modoEdicaoHint");
+    form.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const c = {
+        id: editId ?? Date.now(),
+        glicemia: +$("#glicemia").value, pressao: $("#pressao").value.trim(), bpm: +$("#bpm").value,
+        colesterol: +$("#colesterol").value, triglicerideos: +$("#triglicerideos").value,
+        data: $("#data").value, hora: $("#hora").value, obs: ($("#obs").value || "").trim()
+      };
+      const arr = getConsultas();
+      if (editId) { const i = arr.findIndex(x => x.id === editId); if (i >= 0) arr[i] = c; showToast("Registro atualizado"); }
+      else { arr.push(c); showToast("Registro salvo"); }
+      setConsultas(arr); cancelarEdicao(false); form.reset(); carregarResumo(); carregarConsultas(); mostrarAba("inicio");
+    });
+    function editar(id) {
+      const c = getConsultas().find(x => x.id === id); if (!c) return;
+      $("#glicemia").value = c.glicemia ?? ""; $("#pressao").value = c.pressao ?? ""; $("#bpm").value = c.bpm ?? "";
+      $("#colesterol").value = c.colesterol ?? ""; $("#triglicerideos").value = c.triglicerideos ?? "";
+      $("#data").value = c.data ?? ""; $("#hora").value = c.hora ?? ""; $("#obs").value = c.obs ?? "";
+      editId = id; btnSalvar.textContent = "Atualizar"; btnCancelar.style.display = "inline-block"; hint.style.display = "inline-block"; mostrarAba("cadastro");
+    }
+    function cancelarEdicao(reset = true) { editId = null; btnSalvar.textContent = "Salvar"; btnCancelar.style.display = "none"; hint.style.display = "none"; if (reset) form.reset(); }
+    window.editar = editar; window.cancelarEdicao = cancelarEdicao;
+
+    function excluir(id) {
+      if (!confirm("Tem certeza que deseja excluir este registro?")) return;
+      const btn = document.querySelector(`button[data-del="${id}"]`); const item = btn ? btn.closest(".item") : null; if (item) item.classList.add("fade-out");
+      setTimeout(() => { setConsultas(getConsultas().filter(c => c.id !== id)); carregarResumo(); carregarConsultas(); showToast("Registro excluído"); }, 350);
+    }
+    window.excluir = excluir;
+
+    /* Filtros/ordenar/agrupamento */
+    const dataInicio = $("#dataInicio"), dataFim = $("#dataFim"), ordenacao = $("#ordenacao"), buscaTexto = $("#buscaTexto"), filtroClass = $("#filtroClass");
+    const chkGlicemia = $("#chkGlicemia"), chkBPM = $("#chkBPM"), chkPressao = $("#chkPressao"), chkCol = $("#chkCol"), chkTri = $("#chkTri"), agrupamento = $("#agrupamento");
+    function ordenarConsultas(consultas) { const dir = (ordenacao?.value || "desc").toLowerCase(); return consultas.sort((a, b) => { const da = new Date(`${a.data}T${a.hora || "00:00"}`).getTime(), db = new Date(`${b.data}T${b.hora || "00:00"}`).getTime(); return dir === "asc" ? da - db : db - da; }); }
+    function filtrarConsultas(consultas) {
+      let out = [...consultas];
+      const dI = dataInicio?.value ? new Date(`${dataInicio.value}T00:00`).getTime() : null, dF = dataFim?.value ? new Date(`${dataFim.value}T23:59`).getTime() : null;
+      if (dI != null) out = out.filter(c => new Date(`${c.data}T${c.hora || "00:00"}`).getTime() >= dI);
+      if (dF != null) out = out.filter(c => new Date(`${c.data}T${c.hora || "00:00"}`).getTime() <= dF);
+      const q = (buscaTexto?.value || "").toLowerCase();
+      if (q) out = out.filter(c => [c.pressao, c.obs, c.glicemia?.toString(), c.bpm?.toString(), c.colesterol?.toString(), c.triglicerideos?.toString()].filter(Boolean).some(v => v.toLowerCase().includes(q)));
+      const lim = getLimites();
+      if (filtroClass && filtroClass.value !== "todas") { out = out.filter(c => classOverall(c, lim) === filtroClass.value); }
+      return out;
+    }
+
+    /* Agrupar e helpers */
+    function numOrNull(v) { const n = Number(v); return Number.isFinite(n) ? n : null; }
+    function round1(v) { return v == null ? null : Math.round(v * 10) / 10; }
+    function labelMesBR(isoYYYYMM) { const [y, m] = isoYYYYMM.split("-"); return `${m}/${y}`; }
+    function getISOWeek(d) { const date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate())); const dayNum = date.getUTCDay() || 7; date.setUTCDate(date.getUTCDate() + 4 - dayNum); const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1)); const weekNo = Math.ceil((((date - yearStart) / 86400000) + 1) / 7); return `${date.getUTCFullYear()}-W${String(weekNo).padStart(2, '0')}`; }
+    function agruparDados(consultas, modo) {
+      if (modo === "diario") {
+        const labels = consultas.map(c => `${formatarDataBR(c.data)} ${c.hora || ""}`.trim());
+        return { labels, pontos: consultas.map(c => ({ g: numOrNull(c.glicemia), b: numOrNull(c.bpm), sys: parsePressao(c.pressao).sys, dia: parsePressao(c.pressao).dia, col: numOrNull(c.colesterol), tri: numOrNull(c.triglicerideos) })) };
+      }
+      const grupos = {}; consultas.forEach(c => { const d = new Date(`${c.data}T${c.hora || "00:00"}`); const chave = (modo === "mensal") ? c.data.slice(0, 7) : getISOWeek(d); if (!grupos[chave]) grupos[chave] = []; grupos[chave].push(c); });
+      const keys = Object.keys(grupos).sort();
+      const labels = keys.map(k => modo === "mensal" ? labelMesBR(k) : k);
+      const pontos = keys.map(k => {
+        const arr = grupos[k], avg = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        const g = avg(arr.map(x => +x.glicemia).filter(isFinite)), b = avg(arr.map(x => +x.bpm).filter(isFinite)), sys = avg(arr.map(x => parsePressao(x.pressao).sys).filter(isFinite)), dia = avg(arr.map(x => parsePressao(x.pressao).dia).filter(isFinite));
+        const col = avg(arr.map(x => +x.colesterol).filter(isFinite)), tri = avg(arr.map(x => +x.triglicerideos).filter(isFinite));
+        return { g: round1(g), b: round1(b), sys: round1(sys), dia: round1(dia), col: round1(col), tri: round1(tri) };
+      });
+      return { labels, pontos, keys };
+    }
+
+    /* Estatísticas */
+    function nums(xs) { return xs.map(Number).filter(v => Number.isFinite(v)) }
+    function media(xs) { return xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null }
+    function calcStats(arr) {
+      const g = nums(arr.map(c => c.glicemia)), b = nums(arr.map(c => c.bpm)), sys = nums(arr.map(c => parsePressao(c.pressao).sys)), dia = nums(arr.map(c => parsePressao(c.pressao).dia));
+      const col = nums(arr.map(c => c.colesterol)), tri = nums(arr.map(c => c.triglicerideos));
+      return { gMed: media(g), bMed: media(b), sMed: media(sys), dMed: media(dia), colMed: media(col), triMed: media(tri), count: arr.length };
+    }
+    function renderStats(arr) {
+      const st = calcStats(arr);
+      $("#statGlicemia").textContent = st.gMed != null ? `${st.gMed} mg/dL` : "-";
+      $("#statBPM").textContent = st.bMed != null ? `${st.bMed} bpm` : "-";
+      $("#statPressao").textContent = (st.sMed != null && st.dMed != null) ? `${st.sMed}/${st.dMed} mmHg` : "-";
+      $("#statCol").textContent = st.colMed != null ? `${st.colMed} mg/dL` : "-";
+      $("#statTri").textContent = st.triMed != null ? `${st.triMed} mg/dL` : "-";
+    }
+
+    /* Lista (histórico) */
+    const listaConsultas = $("#listaConsultas");
+    function trend(curr, prev) { if (prev == null || curr == null || Number.isNaN(curr) || Number.isNaN(prev)) return "•"; if (curr > prev) return "↑"; if (curr < prev) return "↓"; return "→" }
+    function renderLista(consultas) {
+      listaConsultas.innerHTML = ""; if (consultas.length === 0) { listaConsultas.innerHTML = `<div class="card" style="color:var(--muted)">Nenhum registro encontrado.</div>`; return }
+      const asc = [...consultas].sort((a, b) => new Date(`${a.data}T${a.hora || "00:00"}`) - new Date(`${b.data}T${b.hora || "00:00"}`)), prevMap = new Map();
+      for (let i = 0; i < asc.length; i++) {
+        const c = asc[i], p = asc[i - 1]; prevMap.set(c.id, {
+          gPrev: p ? +p.glicemia : null, bPrev: p ? +p.bpm : null, sPrev: p ? parsePressao(p.pressao).sys : null, dPrev: p ? parsePressao(p.pressao).dia : null,
+          colPrev: p ? +p.colesterol : null, triPrev: p ? +p.triglicerideos : null
+        });
+      }
+      const lim = getLimites();
+      for (const c of consultas) {
+        const { sys, dia } = parsePressao(c.pressao), prev = prevMap.get(c.id) || {};
+        const overall = classOverall(c, lim);
+        const el = document.createElement("div"); el.className = "card item";
+        el.innerHTML = `
+      <div class="vals">
+        <span class="badge">Glicemia: ${c.glicemia ?? "-"} <strong>${trend(+c.glicemia, prev.gPrev)}</strong></span>
+        <span class="badge">Pressão: ${sys ?? "-"}<span style="opacity:.6">/</span>${dia ?? "-"} <strong>${trend(sys, prev.sPrev)}</strong></span>
+        <span class="badge">BPM: ${c.bpm ?? "-"} <strong>${trend(+c.bpm, prev.bPrev)}</strong></span>
+        <span class="badge">Colesterol: ${c.colesterol ?? "-"} <strong>${trend(+c.colesterol, prev.colPrev)}</strong></span>
+        <span class="badge">Triglicerídeos: ${c.triglicerideos ?? "-"} <strong>${trend(+c.triglicerideos, prev.triPrev)}</strong></span>
+        ${classToBadge(overall)}
+      </div>
+      <div class="meta">
+        <div><strong>${formatarDataBR(c.data) || "-"}</strong> • ${c.hora || "-"}</div>
+        ${c.obs ? `<div style="margin-top:6px">${c.obs}</div>` : ""}
+        <div style="margin-top:8px; display:flex; gap:8px; justify-content:flex-end">
+          <button class="btn" onclick="editar(${c.id})">Editar</button>
+          <button class="btn" data-del="${c.id}" onclick="excluir(${c.id})">Excluir</button>
+        </div>
+      </div>`;
+        listaConsultas.appendChild(el);
+      }
+    }
+
+    /* Comparativo mensal + previsão (glicemia) */
+    function mediasPorMes(consultas) {
+      const grupos = {};
+      consultas.forEach(c => { const mes = c.data.slice(0, 7); if (!grupos[mes]) grupos[mes] = []; grupos[mes].push(c); });
+      const meses = Object.keys(grupos).sort();
+      const map = {}; meses.forEach(m => {
+        const arr = grupos[m], avg = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        const g = avg(arr.map(x => +x.glicemia).filter(isFinite));
+        const b = avg(arr.map(x => +x.bpm).filter(isFinite));
+        const sys = avg(arr.map(x => parsePressao(x.pressao).sys).filter(isFinite));
+        const dia = avg(arr.map(x => parsePressao(x.pressao).dia).filter(isFinite));
+        const col = avg(arr.map(x => +x.colesterol).filter(isFinite));
+        const tri = avg(arr.map(x => +x.triglicerideos).filter(isFinite));
+        map[m] = { g: round1(g), b: round1(b), sys: round1(sys), dia: round1(dia), col: round1(col), tri: round1(tri) };
+      });
+      return { meses, map };
+    }
+    function variacaoPercent(atual, anterior) { if (anterior == null || anterior === 0 || atual == null) return null; return Math.round(((atual - anterior) / anterior) * 1000) / 10; }
+    function arrowPct(p) { if (p == null) return ""; if (p > 0) return `(<span class="st-alerta" style="padding:2px 6px">↑ ${p}%</span>)`; if (p < 0) return `(<span class="st-normal" style="padding:2px 6px">↓ ${Math.abs(p)}%</span>)`; return `(<span class="st-atencao" style="padding:2px 6px">→ 0%</span>)`; }
+    function previsaoProximoMesG(medias) {
+      const seq = medias.filter(v => v != null);
+      if (seq.length < 2) return null;
+      const last = medias.slice(-3);
+      let deltas = [];
+      for (let i = 1; i < last.length; i++) { if (last[i] != null && last[i - 1] != null) deltas.push(last[i] - last[i - 1]); }
+      if (!deltas.length) return null;
+      const delta = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+      const proj = last[last.length - 1] + delta;
+      return round1(proj);
+    }
+
+    /* Alertas inteligentes e preditivos */
+    function mediasPorDia(consultas) {
+      const grupos = {};
+      consultas.forEach(c => { const key = c.data; if (!grupos[key]) grupos[key] = []; grupos[key].push(c); });
+      const dias = Object.keys(grupos).sort();
+      return dias.map(d => {
+        const arr = grupos[d], avg = xs => xs.length ? xs.reduce((a, b) => a + b, 0) / xs.length : null;
+        const g = avg(arr.map(x => +x.glicemia).filter(isFinite));
+        const b = avg(arr.map(x => +x.bpm).filter(isFinite));
+        const sys = avg(arr.map(x => parsePressao(x.pressao).sys).filter(isFinite));
+        const dia = avg(arr.map(x => parsePressao(x.pressao).dia).filter(isFinite));
+        const col = avg(arr.map(x => +x.colesterol).filter(isFinite));
+        const tri = avg(arr.map(x => +x.triglicerideos).filter(isFinite));
+        return { data: d, g: round1(g), b: round1(b), sys: round1(sys), dia: round1(dia), col: round1(col), tri: round1(tri) };
+      });
+    }
+    function detectarAlertasInteligentes(consultas) {
+      const lim = getLimites();
+      const diarias = mediasPorDia(consultas);
+      const alertas = [];
+      if (diarias.length >= 3) {
+        const last3 = diarias.slice(-3);
+        const inc = (k) => last3[0][k] != null && last3[1][k] != null && last3[2][k] != null && (last3[0][k] < last3[1][k]) && (last3[1][k] < last3[2][k]);
+        if (inc("g")) alertas.push(`Glicemia em tendência de alta por 3 dias: ${formatarDataBR(last3[0].data)} → ${formatarDataBR(last3[2].data)}`);
+        if (inc("sys")) alertas.push(`Pressão sistólica em tendência de alta por 3 dias: ${formatarDataBR(last3[0].data)} → ${formatarDataBR(last3[2].data)}`);
+        if (inc("col")) alertas.push(`Colesterol em tendência de alta por 3 dias.`);
+        if (inc("tri")) alertas.push(`Triglicerídeos em tendência de alta por 3 dias.`);
+      }
+      const u = diarias[diarias.length - 1];
+      if (u) {
+        const lims = getLimites();
+        if (u.g != null && u.g > lims.glicemia.atencaoMax) alertas.push(`Glicemia do último dia acima do limite: ${u.g} mg/dL`);
+        if (u.sys != null && u.sys > lims.pressao.sysAtencaoMax) alertas.push(`Sistólica do último dia acima do limite: ${u.sys} mmHg`);
+        if (u.dia != null && u.dia > lims.pressao.diaAtencaoMax) alertas.push(`Diastólica do último dia acima do limite: ${u.dia} mmHg`);
+        if (u.b != null && u.b > lims.bpm.atencaoMax) alertas.push(`BPM do último dia acima do limite: ${u.b} bpm`);
+        if (u.col != null && u.col > lims.colesterol.atencaoMax) alertas.push(`Colesterol do último dia acima do limite: ${u.col} mg/dL`);
+        if (u.tri != null && u.tri > lims.triglicerideos.atencaoMax) alertas.push(`Triglicerídeos do último dia acima do limite: ${u.tri} mg/dL`);
+      }
+      return alertas;
+    }
+    function preverValor(seq) {
+      if (!seq || seq.length < 2) return null;
+      const last = seq.slice(-3);
+      const deltas = [];
+      for (let i = 1; i < last.length; i++) {
+        if (last[i] != null && last[i - 1] != null) deltas.push(last[i] - last[i - 1]);
+      }
+      if (!deltas.length) return null;
+      const deltaMed = deltas.reduce((a, b) => a + b, 0) / deltas.length;
+      return round1(last[last.length - 1] + deltaMed * 2);
+    }
+    function gerarAlertasPreditivos(consultas) {
+      const lim = getLimites();
+      const diarias = mediasPorDia(consultas);
+      if (!diarias.length) return [];
+      const seq = (k) => diarias.map(d => d[k]);
+      const prev = {
+        g: preverValor(seq("g")),
+        sys: preverValor(seq("sys")),
+        dia: preverValor(seq("dia")),
+        col: preverValor(seq("col")),
+        tri: preverValor(seq("tri")),
+        b: preverValor(seq("b"))
+      };
+      const out = [];
+      if (prev.g != null && prev.g > lim.glicemia.atencaoMax) out.push(`Projeção: Glicemia pode chegar a ${prev.g} mg/dL`);
+      if (prev.sys != null && prev.sys > lim.pressao.sysAtencaoMax) out.push(`Projeção: Sistólica pode chegar a ${prev.sys} mmHg`);
+      if (prev.dia != null && prev.dia > lim.pressao.diaAtencaoMax) out.push(`Projeção: Diastólica pode chegar a ${prev.dia} mmHg`);
+      if (prev.col != null && prev.col > lim.colesterol.atencaoMax) out.push(`Projeção: Colesterol pode chegar a ${prev.col} mg/dL`);
+      if (prev.tri != null && prev.tri > lim.triglicerideos.atencaoMax) out.push(`Projeção: Triglicerídeos podem chegar a ${prev.tri} mg/dL`);
+      if (prev.b != null && prev.b > lim.bpm.atencaoMax) out.push(`Projeção: BPM pode chegar a ${prev.b} bpm`);
+      return out;
+    }
+
+    /* Ação de emergência: exibir botão "tel:" quando muito acima */
+    function verificarEmergencia(c, lim) {
+      const { sys, dia } = parsePressao(c.pressao || "");
+      const muitoAlto =
+        (+c.glicemia > lim.glicemia.atencaoMax + 30) ||
+        (sys != null && sys > lim.pressao.sysAtencaoMax + 20) ||
+        (dia != null && dia > lim.pressao.diaAtencaoMax + 15) ||
+        (+c.colesterol > lim.colesterol.atencaoMax + 50) ||
+        (+c.triglicerideos > lim.triglicerideos.atencaoMax + 100) ||
+        (+c.bpm > lim.bpm.atencaoMax + 20);
+
+      const btn = $("#btnEmergencia");
+      const hint = $("#emergenciaHint");
+      const perfil = JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}");
+      const tel = (perfil.emergencia || "").replace(/\s+/g, '') || "192";
+      btn.href = `tel:${tel}`;
+      if (muitoAlto) {
+        btn.style.display = "inline-block";
+        hint.textContent = tel === "192" ? "Chama o SAMU (192) ao tocar" : `Vai ligar para ${tel}`;
+      } else {
+        btn.style.display = "none";
+        hint.textContent = "";
+      }
+    }
+
+    /* Gráfico histórico + projeção */
+    function atualizarGrafico(consultas) {
+      const ctx = $("#grafico").getContext("2d"); if (grafico) grafico.destroy();
+      const modo = agrupamento.value || "diario";
+      const ordAsc = [...consultas].sort((a, b) => new Date(`${a.data}T${a.hora || "00:00"}`) - new Date(`${b.data}T${b.hora || "00:00"}`));
+      const base = agruparDados(ordAsc, modo), labels = base.labels, p = base.pontos;
+      const glicemiaData = p.map(x => x.g), bpmData = p.map(x => x.b), sysData = p.map(x => x.sys), diaData = p.map(x => x.dia), colData = p.map(x => x.col), triData = p.map(x => x.tri);
+      const ref = (v, l) => Array.from({ length: l }, () => v);
+      const ds = [];
+      if (chkGlicemia.checked) {
+        ds.push({ label: "Glicemia", data: glicemiaData, borderColor: getCss("--blue"), backgroundColor: "rgba(59,130,246,.15)", borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Limite glicemia (140)", data: ref(140, labels.length), borderColor: "rgba(239,68,68,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+      }
+      if (chkBPM.checked) {
+        ds.push({ label: "BPM", data: bpmData, borderColor: getCss("--red"), backgroundColor: "rgba(239,68,68,.12)", borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Limite BPM (100)", data: ref(100, labels.length), borderColor: "rgba(239,68,68,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+      }
+      if (chkPressao.checked) {
+        ds.push({ label: "Pressão sistólica", data: sysData, borderColor: getCss("--cyan"), backgroundColor: "rgba(6,182,212,.12)", borderDash: [6, 4], borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Pressão diastólica", data: diaData, borderColor: getCss("--green"), backgroundColor: "rgba(16,185,129,.12)", borderDash: [6, 4], borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Limite SYS (140)", data: ref(140, labels.length), borderColor: "rgba(239,68,68,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+        ds.push({ label: "Limite DIA (90)", data: ref(90, labels.length), borderColor: "rgba(239,68,68,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+      }
+      if (chkCol.checked) {
+        ds.push({ label: "Colesterol", data: colData, borderColor: getCss("--purple"), backgroundColor: "rgba(139,92,246,.15)", borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Limite Col (200)", data: ref(200, labels.length), borderColor: "rgba(139,92,246,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+      }
+      if (chkTri.checked) {
+        ds.push({ label: "Triglicerídeos", data: triData, borderColor: getCss("--pink"), backgroundColor: "rgba(236,72,153,.15)", borderWidth: 2, tension: .3, spanGaps: true });
+        ds.push({ label: "Limite Tri (150)", data: ref(150, labels.length), borderColor: "rgba(236,72,153,.6)", borderWidth: 1, borderDash: [6, 4], pointRadius: 0 });
+      }
+
+      // Projeção mensal (glicemia)
+      if (modo === "mensal" && chkGlicemia.checked && labels.length >= 2) {
+        const { meses, map } = mediasPorMes(ordAsc);
+        const gSeq = meses.map(m => map[m].g);
+        const proj = previsaoProximoMesG(gSeq);
+        if (proj != null) {
+          labels.push("Próx mês");
+          ds.push({ label: "Projeção glicemia", data: [...glicemiaData, proj], borderColor: "rgba(245,158,11,0.9)", borderDash: [8, 4], borderWidth: 2, pointRadius: 3, tension: .2, spanGaps: true });
+          if (chkGlicemia.checked) { ds[1].data.push(140); }
+          if (chkCol.checked) { ds.forEach(d => { if (d.label === "Limite Col (200)") d.data.push(200); }); }
+          if (chkTri.checked) { ds.forEach(d => { if (d.label === "Limite Tri (150)") d.data.push(150); }); }
+          if (chkPressao.checked) { ds.forEach(d => { if (d.label?.includes("Limite SYS")) d.data.push(140); if (d.label?.includes("Limite DIA")) d.data.push(90); }); }
+          if (chkBPM.checked) { ds.forEach(d => { if (d.label?.includes("Limite BPM")) d.data.push(100); }); }
+        }
+      }
+
+      const legendColor = getCss('--text') || '#1f2937', gridColor = getCss('--grid-soft') || 'rgba(0,0,0,.06)';
+      grafico = new Chart(ctx, {
+        type: "line", data: { labels, datasets: ds }, options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: {
+            legend: { position: "top", labels: { color: legendColor, font: { size: 14, weight: "bold" } } },
+            tooltip: { backgroundColor: "rgba(255,255,255,.95)", titleColor: "#111827", bodyColor: "#111827", borderColor: "rgba(0,0,0,.1)", borderWidth: 1, padding: 10 }
+          },
+          scales: { x: { ticks: { color: legendColor }, grid: { color: gridColor } }, y: { ticks: { color: legendColor }, grid: { color: gridColor } } },
+          elements: { point: { radius: 3, hoverRadius: 5 } }
+        }
+      });
+      const wrap = document.querySelector(".chart-wrap"); if (wrap) wrap.style.height = labels.length ? "360px" : "0px";
+    }
+
+    /* PDF */
+    function salvarPDF() {
+      const { jsPDF } = window.jspdf; const doc = new jsPDF({ unit: "mm", format: "a4" });
+      const arr = getConsultas(), regs = ordenarConsultas(filtrarConsultas(arr)); let y = 14;
+      doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("Relatório de Medidas", 14, y); y += 8; doc.setFont("helvetica", "normal"); doc.setFontSize(10);
+      if (!regs.length) { doc.text("Nenhum registro encontrado para os filtros atuais.", 14, y); return doc.save("consultas.pdf"); }
+      for (let i = 0; i < regs.length; i++) {
+        const c = regs[i], { sys, dia } = parsePressao(c.pressao);
+        const linhas = [
+          `#${i + 1} • ${formatarDataBR(c.data) || "-"} ${c.hora || "-"}`,
+          `Glicemia: ${c.glicemia ?? "-"}`,
+          `Pressão: ${sys ?? "-"} / ${dia ?? "-"}`,
+          `BPM: ${c.bpm ?? "-"}`,
+          `Colesterol: ${c.colesterol ?? "-"}`,
+          `Triglicerídeos: ${c.triglicerideos ?? "-"}`,
+          c.obs ? `Obs: ${c.obs}` : null
+        ].filter(Boolean);
+        for (const ln of linhas) { if (y > 280) { doc.addPage(); y = 14; } doc.text(ln, 14, y); y += 6; } y += 2;
+      } doc.save("consultas.pdf");
+    }
+    window.salvarPDF = salvarPDF;
+
+    /* Meus Dados + Limites + Lembretes */
+    function carregarMeusDados() {
+      const d = JSON.parse(localStorage.getItem(PROFILE_KEY) || "{}");
+      $("#md_nome").value = d.nome || ""; $("#md_endereco").value = d.endereco || ""; $("#md_telefone").value = d.telefone || "";
+      $("#md_idade").value = d.idade || ""; $("#md_tipo").value = d.tipo || "";
+      $("#md_lembretes").value = (d.lembretes || []).join(", "); $("#md_habilitar").checked = !!d.habilitar;
+      $("#md_emergencia").value = d.emergencia || "192";
+
+      const lim = getLimites();
+      $("#lim_glic_norm").value = lim.glicemia.normalMax; $("#lim_glic_at").value = lim.glicemia.atencaoMax;
+      $("#lim_bpm_norm").value = lim.bpm.normalMax; $("#lim_bpm_at").value = lim.bpm.atencaoMax;
+      $("#lim_sys_norm").value = lim.pressao.sysNormalMax; $("#lim_sys_at").value = lim.pressao.sysAtencaoMax;
+      $("#lim_dia_norm").value = lim.pressao.diaNormalMax; $("#lim_dia_at").value = lim.pressao.diaAtencaoMax;
+      $("#lim_col_norm").value = lim.colesterol.normalMax; $("#lim_col_at").value = lim.colesterol.atencaoMax;
+      $("#lim_tri_norm").value = lim.triglicerideos.normalMax; $("#lim_tri_at").value = lim.triglicerideos.atencaoMax;
+    }
+    $("#formMeusDados").addEventListener("submit", (e) => {
+      e.preventDefault();
+      const horarios = $("#md_lembretes").value.split(",").map(s => s.trim()).filter(Boolean);
+      const dados = { nome: $("#md_nome").value.trim(), endereco: $("#md_endereco").value.trim(), telefone: $("#md_telefone").value.trim(), idade: $("#md_idade").value.trim(), tipo: $("#md_tipo").value, lembretes: horarios, habilitar: $("#md_habilitar").checked, emergencia: $("#md_emergencia").value.trim() };
+      localStorage.setItem(PROFILE_KEY, JSON.stringify(dados));
+
+      const lim = {
+        glicemia: { normalMax: +$("#lim_glic_norm").value || 110, atencaoMax: +$("#lim_glic_at").value || 139 },
+        bpm: { normalMax: +$("#lim_bpm_norm").value || 100, atencaoMax: +$("#lim_bpm_at").value || 110 },
+        pressao: {
+          sysNormalMax: +$("#lim_sys_norm").value || 129, sysAtencaoMax: +$("#lim_sys_at").value || 139,
+          diaNormalMax: +$("#lim_dia_norm").value || 84, diaAtencaoMax: +$("#lim_dia_at").value || 89
+        },
+        colesterol: { normalMax: +$("#lim_col_norm").value || 200, atencaoMax: +$("#lim_col_at").value || 239 },
+        triglicerideos: { normalMax: +$("#lim_tri_norm").value || 150, atencaoMax: +$("#lim_tri_at").value || 199 }
+      };
+      setLimites(lim);
+      showToast("Dados e limites salvos");
+      carregarResumo();
+      carregarConsultas();
+    });
+    function pedirPermissaoNotificacao() {
+      if (!("Notification" in window)) return alert("Seu navegador não suporta notificações.");
+      if (Notification.permission === "granted") return showToast("Notificações já autorizadas");
+      Notification.requestPermission().then(p => { if (p === "granted") showToast("Notificações autorizadas"); else alert("Permissão negada"); });
+    }
+    window.pedirPermissaoNotificacao = pedirPermissaoNotificacao;
+
+    /* Correlação BPM x Glicemia */
+    function correlacaoPearson(pares) {
+      const xs = pares.map(p => p.x).filter(v => v != null), ys = pares.map(p => p.y).filter(v => v != null);
+      if (xs.length !== ys.length || xs.length < 3) return null;
+      const n = xs.length, sx = xs.reduce((a, b) => a + b, 0), sy = ys.reduce((a, b) => a + b, 0);
+      const sxx = xs.reduce((a, b) => a + b * b, 0), syy = ys.reduce((a, b) => a + b * b, 0);
+      const sxy = xs.reduce((a, _, i) => a + xs[i] * ys[i], 0);
+      const num = (n * sxy - sx * sy);
+      const den = Math.sqrt((n * sxx - sx * sx) * (n * syy - sy * sy));
+      if (den === 0) return null;
+      return Math.round((num / den) * 1000) / 1000;
+    }
+    function resumoCorrelacao(r) {
+      if (r == null) return "Correlação indisponível (dados insuficientes)";
+      const abs = Math.abs(r);
+      let força = abs < 0.3 ? "fraca" : abs < 0.6 ? "moderada" : "forte";
+      let sentido = r > 0 ? "positiva" : "negativa";
+      return `r = ${r} • ${força} ${sentido}`;
+    }
+    function renderScatter(pares) {
+      const ctx = $("#scatterCorr").getContext("2d");
+      if (scatter) scatter.destroy();
+      const legendColor = getCss('--text') || '#1f2937', gridColor = getCss('--grid-soft') || 'rgba(0,0,0,.06)';
+      scatter = new Chart(ctx, {
+        type: "scatter", data: {
+          datasets: [{ label: "Dias (BPM x Glicemia)", data: pares.map(p => ({ x: p.x, y: p.y })), borderColor: getCss('--cyan') || '#06b6d4', backgroundColor: "rgba(6,182,212,.25)", pointRadius: 4 }]
+        }, options: {
+          responsive: true, maintainAspectRatio: false,
+          plugins: { legend: { labels: { color: legendColor } } },
+          scales: {
+            x: { title: { display: true, text: "BPM", color: legendColor }, ticks: { color: legendColor }, grid: { color: gridColor } },
+            y: { title: { display: true, text: "Glicemia (mg/dL)", color: legendColor }, ticks: { color: legendColor }, grid: { color: gridColor } }
+          }
+        }
+      });
+    }
+
+    /* Relatório sazonal (mantido para reativação futura, não usado) */
+    function estacaoBR(m) { if (m === 12 || m === 1 || m === 2) return "Verão"; if (m >= 3 && m <= 5) return "Outono"; if (m >= 6 && m <= 8) return "Inverno"; return "Primavera"; }
+    function sazonal(consultas) {
+      const grupos = { "Verão": [], "Outono": [], "Inverno": [], "Primavera": [] };
+      consultas.forEach(c => { const dt = new Date(`${c.data}T00:00`); grupos[estacaoBR(dt.getMonth() + 1)].push(c); });
+      const avg = xs => xs.length ? Math.round((xs.reduce((a, b) => a + b, 0) / xs.length) * 10) / 10 : null;
+      const resumo = {};
+      Object.keys(grupos).forEach(k => {
+        const arr = grupos[k];
+        const g = avg(arr.map(x => +x.glicemia).filter(isFinite));
+        const b = avg(arr.map(x => +x.bpm).filter(isFinite));
+        const sys = avg(arr.map(x => parsePressao(x.pressao).sys).filter(isFinite));
+        const dia = avg(arr.map(x => parsePressao(x.pressao).dia).filter(isFinite));
+        const col = avg(arr.map(x => +x.colesterol).filter(isFinite));
+        const tri = avg(arr.map(x => +x.triglicerideos).filter(isFinite));
+        resumo[k] = { g, b, sys, dia, col, tri, count: arr.length };
+      });
+      return resumo;
+    }
+
+    /* Painel: Resumo */
+    function carregarResumo() {
+      const arr = getConsultas(), lim = getLimites();
+      const ultimosBox = $("#ultimosRegistros"), st = calcStats(arr);
+      $("#resumoGlicemia").textContent = st.gMed != null ? `${st.gMed} mg/dL` : "-";
+      $("#resumoBPM").textContent = st.bMed != null ? `${st.bMed} bpm` : "-";
+      $("#resumoPressao").textContent = (st.sMed != null && st.dMed != null) ? `${st.sMed}/${st.dMed} mmHg` : "-";
+      $("#resumoCol").textContent = st.colMed != null ? `${st.colMed} mg/dL` : "-";
+      $("#resumoTri").textContent = st.triMed != null ? `${st.triMed} mg/dL` : "-";
+
+      // Índice de saúde (com base no último registro)
+      if (arr.length) {
+        const last = ordenarConsultas([...arr])[0];
+        const score = calcularScore(last, lim);
+        $("#resumoScore").textContent = score != null ? `${score}/100` : "-";
+        verificarEmergencia(last, lim);
+      } else {
+        $("#resumoScore").textContent = "-";
+        $("#btnEmergencia").style.display = "none";
+        $("#emergenciaHint").textContent = "";
+      }
+
+      // Comparativo mês atual vs anterior + previsão glicemia
+      const ord = ordenarConsultas([...arr]);
+      const { meses, map } = mediasPorMes(ord);
+      const comp = $("#comparativoConteudo"); comp.innerHTML = "";
+      if (meses.length >= 1) {
+        const mAtual = meses[meses.length - 1], mAnt = meses.length >= 2 ? meses[meses.length - 2] : null;
+        const gA = map[mAtual].g, gP = mAnt ? map[mAnt].g : null, gVar = variacaoPercent(gA, gP);
+        const bA = map[mAtual].b, bP = mAnt ? map[mAnt].b : null, bVar = variacaoPercent(bA, bP);
+        const sA = map[mAtual].sys, sP = mAnt ? map[mAnt].sys : null, sVar = variacaoPercent(sA, sP);
+        const dA = map[mAtual].dia, dP = mAnt ? map[mAnt].dia : null, dVar = variacaoPercent(dA, dP);
+        const cA = map[mAtual].col, cP = mAnt ? map[mAnt].col : null, cVar = variacaoPercent(cA, cP);
+        const tA = map[mAtual].tri, tP = mAnt ? map[mAnt].tri : null, tVar = variacaoPercent(tA, tP);
+        comp.innerHTML = `
+      <span class="badge">Glicemia: ${gA ?? "-"} ${arrowPct(gVar)}</span>
+      <span class="badge">BPM: ${bA ?? "-"} ${arrowPct(bVar)}</span>
+      <span class="badge">SYS: ${sA ?? "-"} ${arrowPct(sVar)}</span>
+      <span class="badge">DIA: ${dA ?? "-"} ${arrowPct(dVar)}</span>
+      <span class="badge">Colesterol: ${cA ?? "-"} ${arrowPct(cVar)}</span>
+      <span class="badge">Triglicerídeos: ${tA ?? "-"} ${arrowPct(tVar)}</span>
+    `;
+        const gSeq = meses.map(m => map[m].g);
+        const prev = previsaoProximoMesG(gSeq);
+        $("#previsaoConteudo").innerHTML = prev != null ? `Se continuar nesse ritmo, sua média de glicemia ficará em <strong>${prev} mg/dL</strong> no próximo mês.` : `Previsão indisponível: registre por pelo menos 2 meses.`;
+      } else {
+        comp.innerHTML = `<span class="hint">Sem dados suficientes para comparação.</span>`;
+        $("#previsaoConteudo").innerHTML = `Previsão indisponível: registre por pelo menos 2 meses.`;
+      }
+
+      // Últimos registros
+      if (!arr.length) {
+        ultimosBox.innerHTML = "<p style='color:var(--muted)'>Nenhum registro ainda.</p>";
+        $("#alertasPainel").style.display = "none";
+      } else {
+        const ultimos = ordenarConsultas([...arr]).slice(0, 3); let html = "";
+        ultimos.forEach(c => {
+          const { sys, dia } = parsePressao(c.pressao);
+          const status = classToBadge(classOverall(c, lim));
+          html += `<div style="margin-bottom:10px; padding:10px; border:1px solid var(--grid-soft); border-radius:10px">
+        <div style="display:flex;justify-content:space-between;gap:10px;align-items:center">
+          <div><strong>${formatarDataBR(c.data) || "-"}</strong> • ${c.hora || "-"}</div>
+          ${status}
+        </div>
+        <div class="vals" style="margin-top:6px">
+          <span class="badge">Glicemia: ${c.glicemia ?? "-"}</span>
+          <span class="badge">Pressão: ${sys ?? "-"}/${dia ?? "-"}</span>
+          <span class="badge">BPM: ${c.bpm ?? "-"}</span>
+          <span class="badge">Colesterol: ${c.colesterol ?? "-"}</span>
+          <span class="badge">Triglicerídeos: ${c.triglicerideos ?? "-"}</span>
+        </div>
+        ${c.obs ? `<div style="margin-top:6px;color:var(--muted)">${c.obs}</div>` : ""}
+      </div>`;
+        });
+        ultimosBox.innerHTML = html;
+        const u = ultimos[0], alerta = classOverall(u, lim) === "alerta";
+        $("#alertasPainel").style.display = alerta ? "block" : "none";
+      }
+
+      // Alertas inteligentes
+      const al = detectarAlertasInteligentes(arr);
+      $("#alertasInteligentes").innerHTML = al.length ? al.map(t => `<span class="badge st-atencao" style="border:none">${t}</span>`).join(" ") : `<span class="hint">Sem alertas no momento.</span>`;
+
+      // Alertas preditivos
+      const ap = gerarAlertasPreditivos(arr);
+      $("#alertasPreditivos").innerHTML = ap.length ? ap.map(t => `<span class="badge st-atencao" style="border:none">${t}</span>`).join(" ") : `<span class="hint">Sem projeções de risco nas próximas 2 semanas.</span>`;
+
+      // Correlação BPM x Glicemia
+      const diarias = mediasPorDia(arr);
+      const pares = diarias.filter(d => d.g != null && d.b != null).map(d => ({ x: d.b, y: d.g, label: formatarDataBR(d.data) }));
+      const r = correlacaoPearson(pares);
+      $("#corrResumo").innerHTML = `<span class="badge"> ${resumoCorrelacao(r)} </span>`;
+      renderScatter(pares);
+
+      // Relatório sazonal removido (bloco comentado)
+      /*
+      const saz=sazonal(arr);
+      const estacoes=Object.keys(saz);
+      if(arr.length){
+        const validG=estacoes.filter(k=>saz[k].g!=null);
+        let melhor=null, pior=null;
+        if(validG.length){
+          melhor = validG.reduce((a,b)=> saz[a].g<=saz[b].g?a:b);
+          pior = validG.reduce((a,b)=> saz[a].g>=saz[b].g?a:b);
+        }
+        $("#sazonalConteudo").innerHTML = estacoes.map(k=>{
+          const tag = k===melhor? 'st-normal' : k===pior? 'st-alerta' : '';
+          const badge = tag? ` <span class="status ${tag}">${k===melhor?'melhor':''}${k===pior?'pior':''}</span>` : '';
+          const v=saz[k];
+          return `<div class="card" style="padding:10px; border-radius:10px">
+            <strong>${k}</strong>${badge}<br>
+            <span class="hint">Registros: ${v.count}</span><br>
+            <span class="badge">Glicemia: ${v.g??"-"}</span>
+            <span class="badge">BPM: ${v.b??"-"}</span>
+            <span class="badge">SYS: ${v.sys??"-"}</span>
+            <span class="badge">DIA: ${v.dia??"-"}</span>
+            <span class="badge">Col: ${v.col??"-"}</span>
+            <span class="badge">Tri: ${v.tri??"-"}</span>
+          </div>`;
+        }).join("");
+      } else {
+        $("#sazonalConteudo").innerHTML = `<span class="hint">Sem dados para sazonalidade.</span>`;
+      }
+      */
+    }
+
+    /* Fluxo principal */
+    function carregarConsultas() { const base = getConsultas(); const filtradas = ordenarConsultas(filtrarConsultas(base)); renderStats(filtradas); renderLista(filtradas); atualizarGrafico(filtradas); }
+    document.addEventListener("DOMContentLoaded", () => {
+      aplicarTemaInicial();
+      const now = new Date(), pad = n => String(n).padStart(2, "0");
+      $("#data").value = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      $("#hora").value = `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+      carregarMeusDados();
+      carregarResumo();
+      carregarConsultas();
+      checkReminders();
+      setInterval(checkReminders, 30000);
+    });
+  </script>
+</body>
+
+</html>
