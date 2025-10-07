@@ -1,6 +1,5 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -8,6 +7,10 @@
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- jsPDF -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
@@ -58,7 +61,6 @@
       z-index: 1001;
       transition: transform .25s ease, background .25s ease;
     }
-
     .menu-btn:hover {
       background: var(--primary-hover);
       transform: rotate(90deg) scale(1.05);
@@ -78,395 +80,165 @@
       z-index: 1000;
       box-shadow: 12px 0 24px rgba(0, 0, 0, 0.25);
     }
-
-    .sidebar.active {
-      left: 0;
-    }
-
-    .sidebar h3 {
-      margin: 0 0 20px;
-      font-weight: 700;
-      font-size: 18px;
-    }
-
+    .sidebar.active { left: 0; }
+    .sidebar h3 { margin: 0 0 20px; font-weight: 700; font-size: 18px; }
     .nav-link {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 14px;
-      border-radius: 10px;
-      color: #e5e7eb;
-      text-decoration: none;
-      margin-bottom: 8px;
+      display: flex; align-items: center; gap: 10px;
+      padding: 12px 14px; border-radius: 10px; color: #e5e7eb;
+      text-decoration: none; margin-bottom: 8px;
       transition: background .25s ease, transform .25s ease;
     }
-
-    .nav-link:hover {
-      background: rgba(255, 255, 255, 0.1);
-      transform: translateX(6px);
-    }
-
-    .nav-link.active {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
-    }
+    .nav-link:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(6px); }
+    .nav-link.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
 
     /* Área principal */
-    .container {
-      max-width: 2000px;
-      margin: 30px;
-      padding: 2px;
-    }
+    .container { max-width: 2000px; margin: 30px; padding: 2px; }
 
-    /* Header com dois cards */
+    /* Header */
     .header {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 20px;
-      justify-content: space-between;
-      margin-bottom: 20px;
+      display: flex; flex-wrap: wrap; gap: 20px;
+      justify-content: space-between; margin-bottom: 20px;
     }
-
     .title-card {
-      flex: 1;
-      background: linear-gradient(135deg, #2563eb, #9333ea);
-      color: #fff;
-      padding: 20px 28px;
-      border-radius: 16px;
+      flex: 1; background: linear-gradient(135deg, #2563eb, #9333ea);
+      color: #fff; padding: 20px 28px; border-radius: 16px;
       box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      animation: fadeIn .6s ease;
+      display: flex; align-items: center; justify-content: center;
     }
-
-    .title-card h1 {
-      margin: 0;
-      font-size: 28px;
-      font-weight: 800;
-      letter-spacing: 1px;
-    }
+    .title-card h1 { margin: 0; font-size: 28px; font-weight: 800; }
 
     .patient-card {
-      min-width: 280px;
-      background: #fff;
-      border-radius: 16px;
-      padding: 18px 24px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
-      border: 1px solid #e5e7eb;
-      animation: fadeIn .6s ease;
+      min-width: 280px; background: #fff; border-radius: 16px; padding: 18px 24px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;
     }
+    .patient-card h2 { margin: 0; font-size: 20px; font-weight: 700; color: #111827; }
+    .patient-card p { margin: 6px 0 0; font-size: 14px; color: #6b7280; }
 
-    .patient-card h2 {
-      margin: 0;
-      font-size: 20px;
-      font-weight: 700;
-      color: #111827;
-    }
-
-    .patient-card p {
-      margin: 6px 0 0;
-      font-size: 14px;
-      color: #6b7280;
-    }
-
-    /* Cards gerais */
+    /* Cards */
     .card {
-      background: var(--card);
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      padding: 24px;
-      transition: transform .25s ease, box-shadow .25s ease;
-      animation: fadeIn .4s ease;
+      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
+      padding: 24px; transition: transform .25s ease, box-shadow .25s ease;
     }
+    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12); }
 
-    .card:hover {
-      transform: translateY(-4px);
-      box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
-    }
-
-    @keyframes fadeIn {
-      from {
-        opacity: 0;
-        transform: translateY(10px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-    /* Tabs */
-    .tabs {
-      display: flex;
-      gap: 10px;
-      margin-bottom: 18px;
-      flex-wrap: wrap;
-    }
-
+    /* Tabs (opcional) */
+    .tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
     .tab-btn {
-      padding: 10px 16px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      background: #fff;
-      cursor: pointer;
-      transition: all .25s ease;
-      font-weight: 500;
+      padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 12px;
+      background: #fff; cursor: pointer; transition: all .25s ease; font-weight: 500;
     }
-
-    .tab-btn:hover {
-      background: #f3f4f6;
-      transform: translateY(-2px);
-    }
-
-    .tab-btn.active {
-      background: var(--primary);
-      color: #fff;
-      border-color: var(--primary);
-    }
-
-    .tab {
-      display: none;
-    }
-
-    .tab.active {
-      display: block;
-      animation: fadeIn .4s ease;
-    }
+    .tab-btn:hover { background: #f3f4f6; transform: translateY(-2px); }
+    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .tab { display: none; }
+    .tab.active { display: block; }
 
     /* Formulários */
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 16px;
-    }
+    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+    @media (max-width:700px) { .grid { grid-template-columns: 1fr; } }
 
-    @media (max-width:700px) {
-      .grid {
-        grid-template-columns: 1fr;
-      }
+    label { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block; }
+    input, select {
+      width: 90%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 12px;
+      transition: border .25s ease, box-shadow .25s ease; background: #fff; color: #111827;
     }
-
-    label {
-      font-size: 13px;
-      font-weight: 600;
-      margin-bottom: 6px;
-      display: block;
-    }
-
-    input,
-    select {
-      width: 90%;
-      padding: 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 12px;
-      transition: border .25s ease, box-shadow .25s ease;
-      background: #fff;
-      color: #111827;
-      text-align: center;
-    }
-
-    input::placeholder {
-      color: #9ca3af;
-    }
-
-    input:focus,
-    select:focus {
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-    }
+    input::placeholder { color: #9ca3af; }
+    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
 
     /* Botões */
-    .actions {
-      display: flex;
-      gap: 10px;
-      margin-top: 12px;
-      flex-wrap: wrap;
-    }
-
+    .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
     .btn {
-      padding: 12px 18px;
-      border: none;
-      border-radius: 12px;
-      background: var(--primary);
-      color: #fff;
-      cursor: pointer;
-      font-weight: 600;
-      transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+      padding: 12px 18px; border: none; border-radius: 12px; background: var(--primary); color: #fff;
+      cursor: pointer; font-weight: 600; transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
+      display: inline-flex; align-items: center; gap: 8px;
     }
-
-    .btn:hover {
-      background: var(--primary-hover);
-      transform: translateY(-2px) scale(1.02);
-      box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3);
-    }
-
-    .btn.secondary {
-      background: #f3f4f6;
-      color: #111827;
-    }
-
-    .btn.secondary:hover {
-      background: #e5e7eb;
-      transform: translateY(-2px);
-    }
+    .btn:hover { background: var(--primary-hover); transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3); }
+    .btn.secondary { background: #f3f4f6; color: #111827; }
+    .btn.secondary:hover { background: #e5e7eb; transform: translateY(-2px); }
 
     /* Histórico */
-    .history-list {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 8px;
-    }
-
+    .history-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
     .history-item {
-      background: #fff;
-      border-radius: var(--radius);
-      padding: 16px;
-      box-shadow: var(--shadow);
-      transition: transform .25s ease, box-shadow .25s ease;
+      background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow);
       border: 1px solid #e5e7eb;
     }
-
-    .history-item:hover {
-      transform: scale(1.01);
-      box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-    }
-
-    .history-head {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      color: #374151;
-      font-size: 13px;
-      margin-bottom: 6px;
-    }
-
-    .history-values {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-      font-size: 14px;
-    }
-
-    @media (max-width:600px) {
-      .history-values {
-        grid-template-columns: 1fr;
-      }
-    }
+    .history-head { display: flex; justify-content: space-between; align-items: center; color: #374151; font-size: 13px; margin-bottom: 6px; }
+    .history-values { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px; }
+    @media (max-width:600px) { .history-values { grid-template-columns: 1fr; } }
 
     /* Badges */
-    .badge {
-      display: inline-block;
-      padding: 2px 8px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 700;
-      margin-left: 6px;
-    }
+    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-left: 6px; }
+    .badge-blue { color: var(--blue); background: var(--blue-bg); }
+    .badge-orange { color: var(--orange); background: var(--orange-bg); }
+    .badge-red { color: var(--red); background: var(--red-bg); }
 
-    .badge-blue {
-      color: var(--blue);
-      background: var(--blue-bg);
-    }
-
-    .badge-orange {
-      color: var(--orange);
-      background: var(--orange-bg);
-    }
-
-    .badge-red {
-      color: var(--red);
-      background: var(--red-bg);
-    }
-
-    /* Campo de busca */
+    /* Campo de busca inline */
     .input-inline {
-      flex: 1;
-      padding: 10px 12px;
-      border: 1px solid #e5e7eb;
-      border-radius: 10px;
-      background: #fff;
-      transition: box-shadow .25s ease;
+      flex: 1; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px;
+      background: #fff; transition: box-shadow .25s ease;
     }
-
-    .input-inline:focus {
-      box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2);
-    }
+    .input-inline:focus { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
   </style>
 </head>
 
 <body>
-
   <!-- Botão flutuante -->
-  <button class="menu-btn" id="menuBtn" aria-label="Abrir menu">☰</button>
+  <button class="menu-btn" id="menuBtn" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
 
   <!-- Menu lateral -->
   <aside class="sidebar" id="sidebar" aria-label="Menu">
-    <h3>Painel</h3>
-    <a href="#" class="nav-link" data-tab="tab-dados">🧍 Meus dados</a>
-    <a href="#" class="nav-link" data-tab="tab-exames">🧪 Exames</a>
-    <a href="#" class="nav-link" data-tab="tab-historico">🗂️ Histórico</a>
+    <h3><i class="fa-solid fa-table-columns"></i> Painel</h3>
+    <a href="#" class="nav-link active" data-tab="tab-dados"><i class="fa-solid fa-user"></i> Meus dados</a>
+    <a href="#" class="nav-link" data-tab="tab-exames"><i class="fa-solid fa-vial"></i> Exames</a>
+    <a href="#" class="nav-link" data-tab="tab-historico"><i class="fa-solid fa-clock-rotate-left"></i> Histórico</a>
   </aside>
 
   <!-- Conteúdo principal -->
   <main class="container">
     <div class="header">
       <div class="title-card">
-        <h1>Meus Exames</h1>
+        <h1><i class="fa-solid fa-heart-pulse"></i> Meus Exames</h1>
       </div>
       <div class="patient-card" id="patientCard">
-        <h2 id="patientName">Paciente</h2>
-        <p id="patientAge">Idade: --</p>
+        <h2 id="patientName"><i class="fa-solid fa-user"></i> Paciente</h2>
+        <p id="patientAge"><i class="fa-solid fa-cake-candles"></i> Idade: --</p>
       </div>
     </div>
 
     <section class="card">
-      <!-- <div class="tabs" id="tabs">
-        <button class="tab-btn active" data-tab="tab-dados">Meus dados</button>
-        <button class="tab-btn" data-tab="tab-exames">Exames</button>
-        <button class="tab-btn" data-tab="tab-historico">Histórico</button>
-      </div> -->
-
       <!-- Aba: Meus dados -->
       <div id="tab-dados" class="tab active">
         <form id="formDados">
           <div class="grid">
             <div>
-              <label for="nome">Nome completo</label>
-              <input id="nome" type="text" placeholder="Seu nome" required />
+              <label for="nome"><i class="fa-solid fa-user"></i> Nome completo</label>
+              <input id="nome" type="text" placeholder="Seu nome" />
             </div>
             <div>
-              <label for="nascimento">Data de nascimento</label>
-              <input id="nascimento" type="date" required />
+              <label for="nascimento"><i class="fa-solid fa-cake-candles"></i> Data de nascimento</label>
+              <input id="nascimento" type="text" maxlength="10" placeholder="dd/mm/aaaa" />
             </div>
             <div>
-              <label for="endereco">Endereço</label>
-              <input id="endereco" type="text" placeholder="Rua, número, bairro" required />
+              <label for="endereco"><i class="fa-solid fa-house"></i> Endereço</label>
+              <input id="endereco" type="text" placeholder="Rua, número, bairro" />
             </div>
             <div>
-              <label for="telefone">Telefone</label>
-              <input id="telefone" type="tel" placeholder="(xx) xxxxx-xxxx" required />
+              <label for="telefone"><i class="fa-solid fa-phone"></i> Telefone</label>
+              <input id="telefone" type="tel" placeholder="(xx) xxxxx-xxxx" />
             </div>
             <div>
-              <label for="sangue">Tipo sanguíneo</label>
-              <select id="sangue" required>
+              <label for="sangue"><i class="fa-solid fa-droplet"></i> Tipo sanguíneo</label>
+              <select id="sangue">
                 <option value="">Selecione</option>
-                <option>A+</option>
-                <option>A-</option>
-                <option>B+</option>
-                <option>B-</option>
-                <option>AB+</option>
-                <option>AB-</option>
-                <option>O+</option>
-                <option>O-</option>
+                <option>A+</option><option>A-</option>
+                <option>B+</option><option>B-</option>
+                <option>AB+</option><option>AB-</option>
+                <option>O+</option><option>O-</option>
               </select>
             </div>
           </div>
           <div class="actions">
-            <button class="btn" type="submit">Salvar dados</button>
-            <button class="btn secondary" type="button" id="limparDados">Limpar</button>
+            <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar dados</button>
+            <button class="btn secondary" type="button" id="limparDados"><i class="fa-solid fa-eraser"></i> Limpar</button>
           </div>
         </form>
       </div>
@@ -476,25 +248,29 @@
         <form id="formExames">
           <div class="grid">
             <div>
-              <label for="glicemia">Glicemia (mg/dL)</label>
-              <input id="glicemia" type="number" min="0" step="1" placeholder="Ex: 95" required />
+              <label for="glicemia"><i class="fa-solid fa-syringe"></i> Glicemia (mg/dL)</label>
+              <input id="glicemia" type="number" min="0" step="1" placeholder="Ex: 95" />
             </div>
             <div>
-              <label for="colesterol">Colesterol total (mg/dL)</label>
-              <input id="colesterol" type="number" min="0" step="1" placeholder="Ex: 180" required />
+              <label for="colesterol"><i class="fa-solid fa-heart-pulse"></i> Colesterol total (mg/dL)</label>
+              <input id="colesterol" type="number" min="0" step="1" placeholder="Ex: 180" />
             </div>
             <div>
-              <label for="pressao">Pressão arterial</label>
-              <input id="pressao" type="text" placeholder="Ex: 120/80" required />
+              <label for="trigliceridios"><i class="fa-solid fa-vial"></i> Triglicerídeos (mg/dL)</label>
+              <input id="trigliceridios" type="number" min="0" step="1" placeholder="Ex: 150" />
             </div>
             <div>
-              <label for="bpm">BPM (batimentos por minuto)</label>
-              <input id="bpm" type="number" min="0" step="1" placeholder="Ex: 72" required />
+              <label for="pressao"><i class="fa-solid fa-stethoscope"></i> Pressão arterial</label>
+              <input id="pressao" type="text" maxlength="7" placeholder="Ex: 120/80" />
+            </div>
+            <div>
+              <label for="bpm"><i class="fa-solid fa-heart"></i> BPM (batimentos por minuto)</label>
+              <input id="bpm" type="number" min="0" step="1" placeholder="Ex: 72" />
             </div>
           </div>
           <div class="actions">
-            <button class="btn" type="submit">Salvar exame</button>
-            <button class="btn secondary" type="button" id="limparExame">Limpar campos</button>
+            <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar exame</button>
+            <button class="btn secondary" type="button" id="limparExame"><i class="fa-solid fa-eraser"></i> Limpar campos</button>
           </div>
         </form>
       </div>
@@ -504,10 +280,10 @@
         <div class="actions" style="margin-bottom:8px;">
           <input type="text" id="buscaHistorico" class="input-inline"
             placeholder="Filtrar por data ou valor (ex: 120, 2025-10-03, 120/80)" />
-          <button class="btn secondary" type="button" id="ordenarRecente">Mais recentes</button>
-          <button class="btn secondary" type="button" id="ordenarAntigo">Mais antigos</button>
-          <!-- <button class="btn secondary" type="button" id="exportarHistorico">Exportar JSON</button> -->
-          <button class="btn secondary" type="button" id="apagarHistorico">Apagar histórico</button>
+          <button class="btn secondary" type="button" id="ordenarRecente"><i class="fa-solid fa-arrow-down-wide-short"></i> Mais recentes</button>
+          <button class="btn secondary" type="button" id="ordenarAntigo"><i class="fa-solid fa-arrow-up-short-wide"></i> Mais antigos</button>
+          <button class="btn secondary" type="button" id="salvarPDF"><i class="fa-solid fa-file-pdf"></i> Salvar em PDF</button>
+          <button class="btn secondary" type="button" id="apagarHistorico"><i class="fa-solid fa-trash"></i> Apagar histórico</button>
         </div>
         <div id="listaHistorico" class="history-list"></div>
       </div>
@@ -537,59 +313,24 @@
       });
     });
 
-    // Tabs superiores
-    document.querySelectorAll(".tab-btn").forEach(btn => {
-      btn.addEventListener("click", () => {
-        setActiveTab(btn.getAttribute("data-tab"));
-      });
-    });
-
+    // Alterna abas
     function setActiveTab(id) {
       document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
       document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
       const tab = document.getElementById(id);
-      const topBtn = document.querySelector(`.tab-btn[data-tab="${id}"]`);
       const sideLink = document.querySelector(`.nav-link[data-tab="${id}"]`);
       if (tab) tab.classList.add("active");
-      if (topBtn) topBtn.classList.add("active");
       if (sideLink) sideLink.classList.add("active");
     }
 
-    // Validação simples de pressão arterial (ex: 120/80)
-    function validarPressao(str) {
-      return /^\s*\d{2,3}\s*\/\s*\d{2,3}\s*$/.test(str);
-    }
-
-    // Avaliações de exames
-    function avaliarGlicemia(v) {
-      if (v < 60) return { cls: "badge-orange", msg: "Baixo" };
-      if (v <= 120) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarColesterol(v) {
-      if (v < 200) return { cls: "badge-blue", msg: "Desejável" };
-      if (v < 240) return { cls: "badge-orange", msg: "Limítrofe" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarBPM(v) {
-      if (v < 60) return { cls: "badge-orange", msg: "Baixo" };
-      if (v <= 100) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarPressao(val) {
-      const [s, d] = val.split("/").map(v => parseInt(v, 10));
-      if (isNaN(s) || isNaN(d)) return { cls: "", msg: "N/A" };
-      if (s < 90 || d < 60) return { cls: "badge-orange", msg: "Baixa" };
-      if (s <= 139 && d <= 89) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alta" };
-    }
-
     // Funções de idade
-    function calcularIdade(dataNasc) {
-      if (!dataNasc) return "";
+    function calcularIdadeDDMMAAAA(strData) {
+      // espera dd/mm/aaaa
+      if (!strData || strData.length !== 10) return "";
+      const [dia, mes, ano] = strData.split("/").map(Number);
+      const nasc = new Date(ano, (mes - 1), dia);
+      if (isNaN(nasc)) return "";
       const hoje = new Date();
-      const nasc = new Date(dataNasc);
       let idade = hoje.getFullYear() - nasc.getFullYear();
       const m = hoje.getMonth() - nasc.getMonth();
       if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) {
@@ -603,13 +344,73 @@
       const nameEl = document.getElementById("patientName");
       const ageEl = document.getElementById("patientAge");
       if (dados) {
-        nameEl.textContent = dados.nome || "Paciente";
-        const idade = calcularIdade(dados.nascimento);
-        ageEl.textContent = idade ? `Idade: ${idade} anos` : "Idade: --";
+        nameEl.innerHTML = `<i class="fa-solid fa-user"></i> ${dados.nome || "Paciente"}`;
+        const idade = calcularIdadeDDMMAAAA(dados.nascimento);
+        ageEl.innerHTML = `<i class="fa-solid fa-cake-candles"></i> ${idade !== "" ? `Idade: ${idade} anos` : "Idade: --"}`;
       } else {
-        nameEl.textContent = "Paciente";
-        ageEl.textContent = "Idade: --";
+        nameEl.innerHTML = `<i class="fa-solid fa-user"></i> Paciente`;
+        ageEl.innerHTML = `<i class="fa-solid fa-cake-candles"></i> Idade: --`;
       }
+    }
+
+    // Máscara de data (text + barras automáticas) e atualização da idade em tempo real
+    const nascInput = document.getElementById("nascimento");
+    nascInput.addEventListener("input", (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 2 && v.length <= 4) v = v.replace(/(\d{2})(\d+)/, "$1/$2");
+      else if (v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+      e.target.value = v;
+
+      const idade = calcularIdadeDDMMAAAA(e.target.value);
+      const ageEl = document.getElementById("patientAge");
+      ageEl.innerHTML = `<i class="fa-solid fa-cake-candles"></i> ${idade !== "" ? `Idade: ${idade} anos` : "Idade: --"}`;
+    });
+
+    // Máscara de pressão arterial (text + barra automática)
+    const pressaoInput = document.getElementById("pressao");
+    if (pressaoInput) {
+      pressaoInput.addEventListener("input", (e) => {
+        let v = e.target.value.replace(/\D/g, "");
+        if (v.length > 3) v = v.replace(/(\d{2,3})(\d{1,3})/, "$1/$2");
+        e.target.value = v;
+      });
+    }
+
+    // Validação simples de pressão arterial (ex: 120/80)
+    function validarPressao(str) {
+      if (!str) return true; // campo opcional
+      return /^\s*\d{2,3}\s*\/\s*\d{1,3}\s*$/.test(str);
+    }
+
+    // Avaliações de exames (para badges)
+    function avaliarGlicemia(v) {
+      const n = Number(v);
+      if (!v && v !== 0) return { cls: "", msg: "" };
+      if (n < 60) return { cls: "badge-orange", msg: "Baixo" };
+      if (n <= 120) return { cls: "badge-blue", msg: "Normal" };
+      return { cls: "badge-red", msg: "Alto" };
+    }
+    function avaliarColesterol(v) {
+      const n = Number(v);
+      if (!v && v !== 0) return { cls: "", msg: "" };
+      if (n < 200) return { cls: "badge-blue", msg: "Desejável" };
+      if (n < 240) return { cls: "badge-orange", msg: "Limítrofe" };
+      return { cls: "badge-red", msg: "Alto" };
+    }
+    function avaliarBPM(v) {
+      const n = Number(v);
+      if (!v && v !== 0) return { cls: "", msg: "" };
+      if (n < 60) return { cls: "badge-orange", msg: "Baixo" };
+      if (n <= 100) return { cls: "badge-blue", msg: "Normal" };
+      return { cls: "badge-red", msg: "Alto" };
+    }
+    function avaliarPressao(val) {
+      if (!val || !val.includes("/")) return { cls: "", msg: "" };
+      const [s, d] = val.split("/").map(v => parseInt(v, 10));
+      if (isNaN(s) || isNaN(d)) return { cls: "", msg: "" };
+      if (s < 90 || d < 60) return { cls: "badge-orange", msg: "Baixa" };
+      if (s <= 139 && d <= 89) return { cls: "badge-blue", msg: "Normal" };
+      return { cls: "badge-red", msg: "Alta" };
     }
 
     // Form dados pessoais
@@ -618,27 +419,22 @@
 
     formDados.addEventListener("submit", (e) => {
       e.preventDefault();
+      const dadosExist = JSON.parse(localStorage.getItem(KEY_DADOS) || "{}");
       const dados = {
-        nome: document.getElementById("nome").value.trim(),
-        nascimento: document.getElementById("nascimento").value,
-        endereco: document.getElementById("endereco").value.trim(),
-        telefone: document.getElementById("telefone").value.trim(),
-        sangue: document.getElementById("sangue").value
+        nome: document.getElementById("nome").value.trim() || dadosExist.nome || "",
+        nascimento: document.getElementById("nascimento").value.trim() || dadosExist.nascimento || "",
+        endereco: document.getElementById("endereco").value.trim() || dadosExist.endereco || "",
+        telefone: document.getElementById("telefone").value.trim() || dadosExist.telefone || "",
+        sangue: document.getElementById("sangue").value || dadosExist.sangue || ""
       };
       localStorage.setItem(KEY_DADOS, JSON.stringify(dados));
       atualizarPatientCard();
-      Swal.fire({
-        icon: 'success',
-        title: 'Sucesso!',
-        text: 'Dados salvos com sucesso.',
-        timer: 1800,
-        showConfirmButton: false
-      });
+      Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Dados salvos com sucesso.', timer: 1600, showConfirmButton: false });
     });
 
     limparDadosBtn.addEventListener("click", () => {
       formDados.reset();
-      atualizarPatientCard(); // reflete reset se não houver dados salvos
+      atualizarPatientCard(); // reflete reset visual; não apaga LocalStorage
     });
 
     function carregarDados() {
@@ -658,57 +454,48 @@
 
     formExames.addEventListener("submit", (e) => {
       e.preventDefault();
-      const glicemia = parseInt(document.getElementById("glicemia").value, 10);
-      const colesterol = parseInt(document.getElementById("colesterol").value, 10);
+      const glicemia = document.getElementById("glicemia").value.trim();
+      const colesterol = document.getElementById("colesterol").value.trim();
+      const trigliceridios = document.getElementById("trigliceridios")?.value.trim() || "";
       const pressao = document.getElementById("pressao").value.trim();
-      const bpm = parseInt(document.getElementById("bpm").value, 10);
+      const bpm = document.getElementById("bpm").value.trim();
 
       if (!validarPressao(pressao)) {
-        Swal.fire({
-          icon: 'error',
-          title: 'Formato inválido',
-          text: 'Use algo como 120/80.',
-        });
+        Swal.fire({ icon: 'error', title: 'Formato inválido', text: 'Pressão deve ser algo como 120/80.' });
         return;
       }
 
       const exame = {
-        id: Date.now(), // id único para remoção segura
-        glicemia, colesterol, pressao, bpm,
+        id: Date.now(), // id único
+        glicemia: glicemia || "",
+        colesterol: colesterol || "",
+        trigliceridios: trigliceridios || "",
+        pressao: pressao || "",
+        bpm: bpm || "",
         dataISO: new Date().toISOString()
       };
 
       const historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
       historico.push(exame);
       localStorage.setItem(KEY_HIST, JSON.stringify(historico));
+
       carregarHistorico();
       formExames.reset();
       setActiveTab("tab-historico");
-      Swal.fire({
-        icon: 'success',
-        title: 'Exame salvo!',
-        timer: 1500,
-        showConfirmButton: false
-      });
+      Swal.fire({ icon: 'success', title: 'Exame salvo!', timer: 1400, showConfirmButton: false });
     });
 
     limparExameBtn.addEventListener("click", () => formExames.reset());
-
-    // Ordenação controles
-    document.getElementById("ordenarRecente").addEventListener("click", () => {
-      ordem = "desc";
-      carregarHistorico();
-    });
-    document.getElementById("ordenarAntigo").addEventListener("click", () => {
-      ordem = "asc";
-      carregarHistorico();
-    });
 
     // Busca no histórico
     const buscaInput = document.getElementById("buscaHistorico");
     buscaInput.addEventListener("input", carregarHistorico);
 
-    // Carregar histórico com ordenação e filtro
+    // Ordenação controles
+    document.getElementById("ordenarRecente").addEventListener("click", () => { ordem = "desc"; carregarHistorico(); });
+    document.getElementById("ordenarAntigo").addEventListener("click", () => { ordem = "asc"; carregarHistorico(); });
+
+    // Carregar histórico
     function carregarHistorico() {
       const lista = document.getElementById("listaHistorico");
       lista.innerHTML = "";
@@ -729,6 +516,7 @@
             dataFmt.includes(termo) ||
             String(exame.glicemia).toLowerCase().includes(termo) ||
             String(exame.colesterol).toLowerCase().includes(termo) ||
+            String(exame.trigliceridios).toLowerCase().includes(termo) ||
             String(exame.pressao).toLowerCase().includes(termo) ||
             String(exame.bpm).toLowerCase().includes(termo)
           );
@@ -741,6 +529,7 @@
 
         const g = avaliarGlicemia(exame.glicemia);
         const c = avaliarColesterol(exame.colesterol);
+        const t = avaliarGlicemia(exame.trigliceridios); // você pode criar uma função específica se quiser outra escala
         const p = avaliarPressao(exame.pressao);
         const b = avaliarBPM(exame.bpm);
 
@@ -749,30 +538,24 @@
 
         const head = document.createElement("div");
         head.className = "history-head";
-        head.innerHTML = `<span>Data: ${dataFmt}</span>`;
+        head.innerHTML = `<span><i class="fa-solid fa-calendar-day"></i> Data: ${dataFmt}</span>
+                          <span class="badge badge-blue"><i class="fa-solid fa-vial"></i> Exame</span>`;
 
         const values = document.createElement("div");
         values.className = "history-values";
         values.innerHTML = `
-          <div><strong>Glicemia:</strong> ${exame.glicemia} mg/dL
-            <span class="badge ${g.cls}">${g.msg}</span>
-          </div>
-          <div><strong>Colesterol:</strong> ${exame.colesterol} mg/dL
-            <span class="badge ${c.cls}">${c.msg}</span>
-          </div>
-          <div><strong>Pressão:</strong> ${exame.pressao}
-            <span class="badge ${p.cls}">${p.msg}</span>
-          </div>
-          <div><strong>BPM:</strong> ${exame.bpm}
-            <span class="badge ${b.cls}">${b.msg}</span>
-          </div>
+          <div><strong><i class="fa-solid fa-syringe"></i> Glicemia:</strong> ${exame.glicemia || "--"} ${g.msg ? `<span class="badge ${g.cls}">${g.msg}</span>` : ""}</div>
+          <div><strong><i class="fa-solid fa-heart-pulse"></i> Colesterol:</strong> ${exame.colesterol || "--"} ${c.msg ? `<span class="badge ${c.cls}">${c.msg}</span>` : ""}</div>
+          <div><strong><i class="fa-solid fa-vial"></i> Triglicerídeos:</strong> ${exame.trigliceridios || "--"} ${t.msg ? `<span class="badge ${t.cls}">${t.msg}</span>` : ""}</div>
+          <div><strong><i class="fa-solid fa-stethoscope"></i> Pressão:</strong> ${exame.pressao || "--"} ${p.msg ? `<span class="badge ${p.cls}">${p.msg}</span>` : ""}</div>
+          <div><strong><i class="fa-solid fa-heart"></i> BPM:</strong> ${exame.bpm || "--"} ${b.msg ? `<span class="badge ${b.cls}">${b.msg}</span>` : ""}</div>
         `;
 
         const actions = document.createElement("div");
         actions.className = "actions";
         const removerBtn = document.createElement("button");
         removerBtn.className = "btn secondary";
-        removerBtn.textContent = "Remover";
+        removerBtn.innerHTML = `<i class="fa-solid fa-trash"></i> Remover`;
         removerBtn.addEventListener("click", () => {
           Swal.fire({
             title: 'Remover este exame?',
@@ -792,7 +575,6 @@
         });
 
         actions.appendChild(removerBtn);
-
         item.appendChild(head);
         item.appendChild(values);
         item.appendChild(actions);
@@ -802,7 +584,7 @@
       if (historico.length === 0) {
         const vazio = document.createElement("div");
         vazio.className = "history-item";
-        vazio.textContent = "Nenhum exame encontrado.";
+        vazio.innerHTML = `<i class="fa-regular fa-folder-open"></i> Nenhum exame encontrado.`;
         lista.appendChild(vazio);
       }
     }
@@ -814,52 +596,67 @@
       carregarHistorico();
     }
 
-    // Exportar e apagar histórico
-    document.getElementById("exportarHistorico").addEventListener("click", () => {
-      const historico = localStorage.getItem(KEY_HIST) || "[]";
-      const blob = new Blob([historico], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "historico-exames.json";
-      a.click();
-      URL.revokeObjectURL(url);
-      Swal.fire({
-        icon: 'success',
-        title: 'Exportado!',
-        text: 'Arquivo JSON gerado com sucesso.',
-        timer: 1500,
-        showConfirmButton: false
-      });
-    });
+    // Salvar em PDF: dados do paciente + exames
+    document.getElementById("salvarPDF").addEventListener("click", () => {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
 
-    document.getElementById("apagarHistorico").addEventListener("click", () => {
-      Swal.fire({
-        title: 'Apagar todo o histórico?',
-        text: "Essa ação não pode ser desfeita.",
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#9ca3af',
-        confirmButtonText: 'Sim, apagar',
-        cancelButtonText: 'Cancelar'
-      }).then((result) => {
-        if (result.isConfirmed) {
-          localStorage.removeItem(KEY_HIST);
-          carregarHistorico();
-          Swal.fire('Apagado!', 'O histórico foi limpo.', 'success');
-        }
-      });
+      // Header
+      doc.setFontSize(18);
+      doc.text("Relatório de Saúde", 14, 20);
+
+      // Dados do paciente
+      const dados = JSON.parse(localStorage.getItem(KEY_DADOS) || "{}");
+      doc.setFontSize(13);
+      doc.text("Dados do paciente", 14, 32);
+      doc.setFontSize(11);
+      doc.text(`Nome: ${dados.nome || "--"}`, 14, 42);
+      doc.text(`Nascimento: ${dados.nascimento || "--"}`, 14, 50);
+      doc.text(`Endereço: ${dados.endereco || "--"}`, 14, 58);
+      doc.text(`Telefone: ${dados.telefone || "--"}`, 14, 66);
+      doc.text(`Tipo sanguíneo: ${dados.sangue || "--"}`, 14, 74);
+
+      // Exames
+      let historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
+      doc.setFontSize(13);
+      const yStart = 88;
+      doc.text("Exames", 14, yStart);
+
+      doc.setFontSize(11);
+      let y = yStart + 10;
+
+      if (historico.length === 0) {
+        doc.text("Nenhum exame registrado.", 14, y);
+      } else {
+        // ordenar por data (mais recentes)
+        historico.sort((a, b) => new Date(b.dataISO) - new Date(a.dataISO));
+
+        historico.forEach((exame, i) => {
+          const dataFmt = new Date(exame.dataISO).toLocaleString("pt-BR");
+          doc.text(`${i + 1}. Data: ${dataFmt}`, 14, y); y += 6;
+          doc.text(`   Glicemia: ${exame.glicemia || "--"}`, 14, y); y += 6;
+          doc.text(`   Colesterol: ${exame.colesterol || "--"}`, 14, y); y += 6;
+          doc.text(`   Triglicerídeos: ${exame.trigliceridios || "--"}`, 14, y); y += 6;
+          doc.text(`   Pressão: ${exame.pressao || "--"}`, 14, y); y += 6;
+          doc.text(`   BPM: ${exame.bpm || "--"}`, 14, y); y += 10;
+
+          if (y > 270) { // quebra de página
+            doc.addPage();
+            y = 20;
+          }
+        });
+      }
+
+      doc.save("relatorio-saude.pdf");
+      Swal.fire({ icon: 'success', title: 'PDF gerado!', text: 'Relatório salvo com sucesso.', timer: 1600, showConfirmButton: false });
     });
 
     // Inicialização
     window.addEventListener("DOMContentLoaded", () => {
       carregarDados();
       carregarHistorico();
+      setActiveTab("tab-dados"); // abre "Meus dados" inicialmente
     });
   </script>
 </body>
-
 </html>
-
-<!-- e meu viu seus copiadores de mer***. Carlos F.R. (ACE itinha-ma) -->
