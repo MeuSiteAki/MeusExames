@@ -3,200 +3,110 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Painel de Saúde</title>
+  <title>Painel de Saúde Multi-Pacientes (Protegido)</title>
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+  <!-- CryptoJS -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
   <!-- jsPDF -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
   <style>
     :root {
-      --bg1: #f9fafb;
-      --bg2: #eef2f7;
-      --card: #ffffff;
-      --text: #1f2937;
-      --primary: #2563eb;
-      --primary-hover: #1d4ed8;
-      --accent: #111827;
-      --muted: #6b7280;
-      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-      --radius: 16px;
+      --bg1: #f9fafb; --bg2: #eef2f7; --card: #ffffff; --text: #1f2937;
+      --primary: #2563eb; --primary-hover: #1d4ed8; --accent: #111827;
+      --blue: #2563eb; --orange: #f97316; --red: #dc2626;
+      --blue-bg: #dbeafe; --orange-bg: #ffedd5; --red-bg: #fee2e2;
+      --shadow: 0 8px 24px rgba(0, 0, 0, 0.08); --radius: 16px;
+    }
+    body { margin:0; font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
+      background: linear-gradient(135deg, var(--bg1), var(--bg2)); min-height: 100vh; color: var(--text); }
+    .menu-btn { position: fixed; right: 20px; bottom: 20px; width: 56px; height: 56px; border-radius: 50%; border: none;
+      background: var(--primary); color: #fff; font-size: 22px; display: flex; align-items: center; justify-content: center;
+      cursor: pointer; box-shadow: var(--shadow); z-index: 1001; transition: transform .25s ease, background .25s ease; }
+    .menu-btn:hover { background: var(--primary-hover); transform: rotate(90deg) scale(1.05); }
 
-      --blue: #2563eb;
-      --orange: #f97316;
-      --red: #dc2626;
-      --blue-bg: #dbeafe;
-      --orange-bg: #ffedd5;
-      --red-bg: #fee2e2;
-    }
-
-    body {
-      margin: 0;
-      font-family: 'Inter', 'Segoe UI', Roboto, Arial, sans-serif;
-      background: linear-gradient(135deg, var(--bg1), var(--bg2));
-      min-height: 100vh;
-      color: var(--text);
-    }
-
-    /* Botão flutuante */
-    .menu-btn {
-      position: fixed;
-      right: 20px;
-      top: 88%;
-      width: 56px;
-      height: 56px;
-      border-radius: 50%;
-      border: none;
-      background: var(--primary);
-      color: #fff;
-      font-size: 24px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      box-shadow: var(--shadow);
-      z-index: 1001;
-      transition: transform .25s ease, background .25s ease;
-    }
-    .menu-btn:hover {
-      background: var(--primary-hover);
-      transform: rotate(90deg) scale(1.05);
-    }
-
-    /* Sidebar */
-    .sidebar {
-      position: fixed;
-      left: -305px;
-      top: 0;
-      width: 280px;
-      height: 100vh;
-      background: var(--accent);
-      color: #fff;
-      padding: 80px 20px 20px;
-      transition: left .3s ease;
-      z-index: 1000;
-      box-shadow: 12px 0 24px rgba(0, 0, 0, 0.25);
-    }
+    .sidebar { position: fixed; left: -305px; top: 0; width: 280px; height: 100vh; background: var(--accent); color: #fff;
+      padding: 80px 20px 20px; transition: left .3s ease; z-index: 1000; box-shadow: 12px 0 24px rgba(0,0,0,.25); }
     .sidebar.active { left: 0; }
-    .sidebar h3 { margin: 0 0 20px; font-weight: 700; font-size: 18px; }
-    .nav-link {
-      display: flex; align-items: center; gap: 10px;
-      padding: 12px 14px; border-radius: 10px; color: #e5e7eb;
-      text-decoration: none; margin-bottom: 8px;
-      transition: background .25s ease, transform .25s ease;
-    }
-    .nav-link:hover { background: rgba(255, 255, 255, 0.1); transform: translateX(6px); }
-    .nav-link.active { background: rgba(255, 255, 255, 0.2); color: #fff; }
+    .sidebar h3 { margin: 0 0 20px; font-weight: 700; font-size: 18px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-link { display:flex; align-items:center; gap:10px; padding:12px 14px; border-radius:10px; color:#e5e7eb; text-decoration:none; margin-bottom:8px; }
+    .nav-link:hover { background: rgba(255,255,255,0.1); }
+    .nav-link.active { background: rgba(255,255,255,0.2); color:#fff; }
 
-    /* Área principal */
-    .container { max-width: 2000px; margin: 30px; padding: 2px; }
+    .container { max-width: 1200px; margin: 30px auto; padding: 0 16px; }
+    .header { display:flex; flex-wrap:wrap; gap:20px; justify-content:space-between; margin-bottom:20px; }
+    .title-card { flex:1; background: linear-gradient(135deg, #2563eb, #9333ea); color:#fff; padding:20px 28px; border-radius:16px;
+      box-shadow: 0 6px 16px rgba(0,0,0,.15); display:flex; align-items:center; justify-content:space-between; }
+    .title-card h1 { margin:0; font-size:26px; font-weight:800; }
+    .title-actions { display:flex; gap:10px; flex-wrap:wrap; }
+    .patient-card { min-width:280px; background:#fff; border-radius:16px; padding:18px 24px; box-shadow: 0 6px 16px rgba(0,0,0,.1); border:1px solid #e5e7eb; }
+    .patient-card h2 { margin:0; font-size:20px; font-weight:700; color:#111827; }
+    .patient-card p { margin:6px 0 0; font-size:14px; color:#6b7280; }
 
-    /* Header */
-    .header {
-      display: flex; flex-wrap: wrap; gap: 20px;
-      justify-content: space-between; margin-bottom: 20px;
-    }
-    .title-card {
-      flex: 1; background: linear-gradient(135deg, #2563eb, #9333ea);
-      color: #fff; padding: 20px 28px; border-radius: 16px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
-      display: flex; align-items: center; justify-content: center;
-    }
-    .title-card h1 { margin: 0; font-size: 28px; font-weight: 800; }
+    .card { background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow); padding: 24px; }
+    .tab { display:none; }
+    .tab.active { display:block; }
 
-    .patient-card {
-      min-width: 280px; background: #fff; border-radius: 16px; padding: 18px 24px;
-      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1); border: 1px solid #e5e7eb;
-    }
-    .patient-card h2 { margin: 0; font-size: 20px; font-weight: 700; color: #111827; }
-    .patient-card p { margin: 6px 0 0; font-size: 14px; color: #6b7280; }
+    .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
+    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
+    label { font-size:13px; font-weight:600; margin-bottom:6px; display:block; }
+    input, select { width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; color:#111827; }
+    input::placeholder { color:#9ca3af; }
 
-    /* Cards */
-    .card {
-      background: var(--card); border-radius: var(--radius); box-shadow: var(--shadow);
-      padding: 24px; transition: transform .25s ease, box-shadow .25s ease;
-    }
-    .card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12); }
+    .actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center; }
+    .btn { padding:12px 18px; border:none; border-radius:12px; cursor:pointer; font-weight:600; display:inline-flex; align-items:center; gap:8px; }
+    .btn.primary { background: var(--primary); color:#fff; }
+    .btn.primary:hover { background: var(--primary-hover); }
+    .btn.secondary { background:#f3f4f6; color:#111827; }
+    .btn.secondary:hover { background:#e5e7eb; }
 
-    /* Tabs (opcional) */
-    .tabs { display: flex; gap: 10px; margin-bottom: 18px; flex-wrap: wrap; }
-    .tab-btn {
-      padding: 10px 16px; border: 1px solid #e5e7eb; border-radius: 12px;
-      background: #fff; cursor: pointer; transition: all .25s ease; font-weight: 500;
-    }
-    .tab-btn:hover { background: #f3f4f6; transform: translateY(-2px); }
-    .tab-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
-    .tab { display: none; }
-    .tab.active { display: block; }
-
-    /* Formulários */
-    .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
-    @media (max-width:700px) { .grid { grid-template-columns: 1fr; } }
-
-    label { font-size: 13px; font-weight: 600; margin-bottom: 6px; display: block; }
-    input, select {
-      width: 90%; padding: 12px; border: 1px solid #e5e7eb; border-radius: 12px;
-      transition: border .25s ease, box-shadow .25s ease; background: #fff; color: #111827;
-    }
-    input::placeholder { color: #9ca3af; }
-    input:focus, select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
-
-    /* Botões */
-    .actions { display: flex; gap: 10px; margin-top: 12px; flex-wrap: wrap; align-items: center; }
-    .btn {
-      padding: 12px 18px; border: none; border-radius: 12px; background: var(--primary); color: #fff;
-      cursor: pointer; font-weight: 600; transition: background .25s ease, transform .25s ease, box-shadow .25s ease;
-      display: inline-flex; align-items: center; gap: 8px;
-    }
-    .btn:hover { background: var(--primary-hover); transform: translateY(-2px) scale(1.02); box-shadow: 0 6px 16px rgba(37, 99, 235, 0.3); }
-    .btn.secondary { background: #f3f4f6; color: #111827; }
-    .btn.secondary:hover { background: #e5e7eb; transform: translateY(-2px); }
-
-    /* Histórico */
-    .history-list { display: flex; flex-direction: column; gap: 12px; margin-top: 8px; }
-    .history-item {
-      background: #fff; border-radius: var(--radius); padding: 16px; box-shadow: var(--shadow);
-      border: 1px solid #e5e7eb;
-    }
-    .history-head { display: flex; justify-content: space-between; align-items: center; color: #374151; font-size: 13px; margin-bottom: 6px; }
-    .history-values { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; font-size: 14px; }
+    .history-list { display:flex; flex-direction:column; gap:16px; margin-top:8px; }
+    .history-card { background:#fff; border-radius:16px; padding:16px; box-shadow: var(--shadow); border:1px solid #e5e7eb; }
+    .history-title { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .history-item { border:1px solid #e5e7eb; border-radius:12px; padding:12px; }
+    .history-head { display:flex; justify-content:space-between; align-items:center; color:#374151; font-size:13px; margin-bottom:6px; }
+    .history-values { display:grid; grid-template-columns: repeat(2, 1fr); gap:10px; font-size:14px; }
     @media (max-width:600px) { .history-values { grid-template-columns: 1fr; } }
 
-    /* Badges */
-    .badge { display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 12px; font-weight: 700; margin-left: 6px; }
+    .badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:700; margin-left:6px; }
     .badge-blue { color: var(--blue); background: var(--blue-bg); }
     .badge-orange { color: var(--orange); background: var(--orange-bg); }
     .badge-red { color: var(--red); background: var(--red-bg); }
 
-    /* Campo de busca inline */
-    .input-inline {
-      flex: 1; padding: 10px 12px; border: 1px solid #e5e7eb; border-radius: 10px;
-      background: #fff; transition: box-shadow .25s ease;
-    }
-    .input-inline:focus { box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.2); }
+    .input-inline { flex:1; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; }
   </style>
 </head>
-
 <body>
   <!-- Botão flutuante -->
   <button class="menu-btn" id="menuBtn" aria-label="Abrir menu"><i class="fa-solid fa-bars"></i></button>
 
-  <!-- Menu lateral -->
+  <!-- Sidebar -->
   <aside class="sidebar" id="sidebar" aria-label="Menu">
-    <h3><i class="fa-solid fa-table-columns"></i> Painel</h3>
-    <a href="#" class="nav-link active" data-tab="tab-dados"><i class="fa-solid fa-user"></i> Meus dados</a>
+    <h3>
+      <span><i class="fa-solid fa-table-columns"></i> Painel</span>
+      <span style="display:flex; gap:8px;">
+        <button class="btn secondary" id="btnTrocarSenha" style="padding:6px 10px; font-size:12px;"><i class="fa-solid fa-key"></i> Trocar senha</button>
+        <button class="btn secondary" id="btnLogout" style="padding:6px 10px; font-size:12px;"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+      </span>
+    </h3>
+    <a href="#" class="nav-link active" data-tab="tab-dados"><i class="fa-solid fa-user"></i> Pacientes</a>
     <a href="#" class="nav-link" data-tab="tab-exames"><i class="fa-solid fa-vial"></i> Exames</a>
     <a href="#" class="nav-link" data-tab="tab-historico"><i class="fa-solid fa-clock-rotate-left"></i> Histórico</a>
   </aside>
 
-  <!-- Conteúdo principal -->
-  <main class="container">
+  <!-- Main -->
+  <main class="container" id="appRoot" style="display:none;">
     <div class="header">
       <div class="title-card">
-        <h1><i class="fa-solid fa-heart-pulse"></i> Meus Exames</h1>
+        <h1><i class="fa-solid fa-heart-pulse"></i> Painel de Saúde do Kaka </h1>
+        <div class="title-actions">
+          <button class="btn secondary" id="btnTrocarSenhaTop"><i class="fa-solid fa-key"></i> Trocar senha</button>
+          <button class="btn secondary" id="btnLogoutTop"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
+        </div>
       </div>
       <div class="patient-card" id="patientCard">
         <h2 id="patientName"><i class="fa-solid fa-user"></i> Paciente</h2>
@@ -205,9 +115,10 @@
     </div>
 
     <section class="card">
-      <!-- Aba: Meus dados -->
+      <!-- Aba: Pacientes -->
       <div id="tab-dados" class="tab active">
         <form id="formDados">
+          <input type="hidden" id="pacienteId" />
           <div class="grid">
             <div>
               <label for="nome"><i class="fa-solid fa-user"></i> Nome completo</label>
@@ -237,16 +148,26 @@
             </div>
           </div>
           <div class="actions">
-            <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar dados</button>
+            <button class="btn primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar paciente</button>
             <button class="btn secondary" type="button" id="limparDados"><i class="fa-solid fa-eraser"></i> Limpar</button>
           </div>
         </form>
+
+        <div class="card" style="margin-top:16px;">
+          <h3><i class="fa-solid fa-users"></i> Pacientes cadastrados</h3>
+          <div id="listaPacientes" class="history-list"></div>
+        </div>
       </div>
 
       <!-- Aba: Exames -->
       <div id="tab-exames" class="tab">
         <form id="formExames">
+          <input type="hidden" id="exameId" />
           <div class="grid">
+            <div>
+              <label for="pacienteSelect"><i class="fa-solid fa-user-check"></i> Paciente</label>
+              <select id="pacienteSelect"></select>
+            </div>
             <div>
               <label for="glicemia"><i class="fa-solid fa-syringe"></i> Glicemia (mg/dL)</label>
               <input id="glicemia" type="number" min="0" step="1" placeholder="Ex: 95" />
@@ -269,8 +190,8 @@
             </div>
           </div>
           <div class="actions">
-            <button class="btn" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar exame</button>
-            <button class="btn secondary" type="button" id="limparExame"><i class="fa-solid fa-eraser"></i> Limpar campos</button>
+            <button class="btn primary" type="submit"><i class="fa-solid fa-floppy-disk"></i> Salvar exame</button>
+            <button class="btn secondary" type="button" id="limparExame"><i class="fa-solid fa-eraser"></i> Limpar</button>
           </div>
         </form>
       </div>
@@ -279,11 +200,11 @@
       <div id="tab-historico" class="tab">
         <div class="actions" style="margin-bottom:8px;">
           <input type="text" id="buscaHistorico" class="input-inline"
-            placeholder="Filtrar por data ou valor (ex: 120, 2025-10-03, 120/80)" />
+                 placeholder="Filtrar por nome, data ou valor (ex: Maria, 120/80)" />
           <button class="btn secondary" type="button" id="ordenarRecente"><i class="fa-solid fa-arrow-down-wide-short"></i> Mais recentes</button>
           <button class="btn secondary" type="button" id="ordenarAntigo"><i class="fa-solid fa-arrow-up-short-wide"></i> Mais antigos</button>
-          <button class="btn secondary" type="button" id="salvarPDF"><i class="fa-solid fa-file-pdf"></i> Salvar em PDF</button>
-          <button class="btn secondary" type="button" id="apagarHistorico"><i class="fa-solid fa-trash"></i> Apagar histórico</button>
+          <button class="btn secondary" type="button" id="salvarPDF"><i class="fa-solid fa-file-pdf"></i> Exportar PDF</button>
+          <button class="btn secondary" type="button" id="apagarHistorico"><i class="fa-solid fa-trash"></i> Apagar todo histórico</button>
         </div>
         <div id="listaHistorico" class="history-list"></div>
       </div>
@@ -291,41 +212,155 @@
   </main>
 
   <script>
-    // Chaves do LocalStorage
-    const KEY_DADOS = "dadosPessoais";
-    const KEY_HIST = "historicoExames";
+    // Constantes e estado
+    const KEY_PAC = "pacientes_enc";
+    const KEY_EXA = "exames_enc";
+    const KEY_PASS = "painelSenha";
+    let SECRET = "";     // senha usada como chave de criptografia
+    let ordem = "desc";  // ordenação do histórico
 
-    // Estado de ordenação
-    let ordem = "desc"; // "desc" = mais recentes primeiro, "asc" = mais antigos
+    // Criptografia AES (CryptoJS)
+    function encSave(key, obj) {
+      try {
+        const text = JSON.stringify(obj);
+        const cipher = CryptoJS.AES.encrypt(text, SECRET).toString();
+        localStorage.setItem(key, cipher);
+      } catch (e) { console.error("Erro ao salvar:", e); }
+    }
+    function encLoad(key, fallback) {
+      try {
+        const cipher = localStorage.getItem(key);
+        if (!cipher) return fallback;
+        const bytes = CryptoJS.AES.decrypt(cipher, SECRET);
+        const text = bytes.toString(CryptoJS.enc.Utf8);
+        if (!text) return fallback;
+        return JSON.parse(text);
+      } catch (e) { console.warn("Erro ao carregar/decifrar:", e); return fallback; }
+    }
 
-    // Abrir/fechar sidebar
-    const menuBtn = document.getElementById("menuBtn");
-    const sidebar = document.getElementById("sidebar");
-    menuBtn.addEventListener("click", () => sidebar.classList.toggle("active"));
+    // Autenticação
+    async function ensurePassword() {
+      let senhaSalva = localStorage.getItem(KEY_PASS);
 
-    // Navegação por sidebar
+      if (!senhaSalva) {
+        const { value: novaSenha } = await Swal.fire({
+          title: "Crie uma senha",
+          input: "password",
+          inputLabel: "Essa senha protegerá seus dados locais",
+          inputPlaceholder: "Digite uma senha",
+          inputAttributes: { autocapitalize: "off", autocorrect: "off" },
+          confirmButtonText: "Salvar",
+          allowOutsideClick: false,
+          allowEscapeKey: false
+        });
+        if (!novaSenha) {
+          await Swal.fire({ icon: "error", title: "Senha obrigatória", text: "Recarregue e crie uma senha." });
+          return false;
+        }
+        localStorage.setItem(KEY_PASS, novaSenha);
+        senhaSalva = novaSenha;
+      }
+
+      const { value: tentativa } = await Swal.fire({
+        title: "Digite a senha",
+        input: "password",
+        inputPlaceholder: "Sua senha",
+        inputAttributes: { autocapitalize: "off", autocorrect: "off" },
+        confirmButtonText: "Entrar",
+        allowOutsideClick: false,
+        allowEscapeKey: false
+      });
+      if (tentativa !== senhaSalva) {
+        document.body.innerHTML = "<h2 style='font-family:Arial; text-align:center; margin-top:40px;'>Acesso bloqueado</h2>";
+        await Swal.fire({ icon: "error", title: "Senha incorreta", text: "Recarregue a página e tente novamente." });
+        return false;
+      }
+
+      SECRET = senhaSalva; // define a chave de criptografia
+      document.getElementById("appRoot").style.display = "block";
+      return true;
+    }
+
+    // Trocar senha (valida atual, define nova, recriptografa dados)
+    async function trocarSenha() {
+      const senhaSalva = localStorage.getItem(KEY_PASS);
+      if (!senhaSalva) {
+        await Swal.fire({ icon:"error", title:"Nenhuma senha configurada", text:"Recarregue a página para criar uma." });
+        return;
+      }
+      const { value: atual } = await Swal.fire({
+        title: "Senha atual",
+        input: "password",
+        inputPlaceholder: "Digite sua senha atual",
+        confirmButtonText: "Continuar",
+        showCancelButton: true
+      });
+      if (!atual) return;
+      if (atual !== senhaSalva) { await Swal.fire({ icon:"error", title:"Senha incorreta" }); return; }
+
+      const { value: nova } = await Swal.fire({
+        title: "Nova senha",
+        input: "password",
+        inputPlaceholder: "Digite a nova senha",
+        confirmButtonText: "Salvar",
+        showCancelButton: true
+      });
+      if (!nova) return;
+
+      // Carrega dados com SECRET atual
+      SECRET = atual;
+      const pacs = encLoad(KEY_PAC, []);
+      const exas = encLoad(KEY_EXA, []);
+
+      // Atualiza senha e recriptografa
+      localStorage.setItem(KEY_PASS, nova);
+      SECRET = nova;
+      encSave(KEY_PAC, pacs);
+      encSave(KEY_EXA, exas);
+
+      await Swal.fire({ icon:"success", title:"Senha alterada com sucesso!" });
+    }
+    document.getElementById("btnTrocarSenha").addEventListener("click", trocarSenha);
+    document.getElementById("btnTrocarSenhaTop").addEventListener("click", trocarSenha);
+
+    // Logout (sem overlay, apenas pede senha novamente)
+    async function logout() {
+      const confirm = await Swal.fire({
+        title:"Sair do painel?",
+        text:"Você precisará digitar a senha novamente para acessar.",
+        icon:"question", showCancelButton:true, confirmButtonText:"Sair", cancelButtonText:"Cancelar"
+      });
+      if (!confirm.isConfirmed) return;
+      document.getElementById("appRoot").style.display = "none";
+      SECRET = "";
+      await ensurePassword();
+      // Após reautenticar, não alterar abas — mantém fluxo
+    }
+    document.getElementById("btnLogout").addEventListener("click", logout);
+    document.getElementById("btnLogoutTop").addEventListener("click", logout);
+
+    // Sidebar e tabs
+    document.getElementById("menuBtn").onclick = ()=> document.getElementById("sidebar").classList.toggle("active");
     document.querySelectorAll(".nav-link").forEach(link => {
       link.addEventListener("click", (e) => {
         e.preventDefault();
         const tabId = link.getAttribute("data-tab");
         setActiveTab(tabId);
-        sidebar.classList.remove("active");
+        document.getElementById("sidebar").classList.remove("active");
       });
     });
-
-    // Alterna abas
     function setActiveTab(id) {
-      document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
-      document.querySelectorAll(".nav-link").forEach(l => l.classList.remove("active"));
+      document.querySelectorAll('.tab').forEach(t => { t.classList.remove('active'); t.style.display='none'; });
+      document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
       const tab = document.getElementById(id);
-      const sideLink = document.querySelector(`.nav-link[data-tab="${id}"]`);
-      if (tab) tab.classList.add("active");
-      if (sideLink) sideLink.classList.add("active");
+      if (tab) { tab.classList.add('active'); tab.style.display='block'; }
+      document.querySelectorAll('.nav-link').forEach(l => { if (l.getAttribute('data-tab') === id) l.classList.add('active'); });
+      if (id === "tab-exames") carregarPacientesSelect();
+      if (id === "tab-historico") carregarHistorico();
     }
 
-    // Funções de idade
+    // Utilitários
     function calcularIdadeDDMMAAAA(strData) {
-      // espera dd/mm/aaaa
       if (!strData || strData.length !== 10) return "";
       const [dia, mes, ano] = strData.split("/").map(Number);
       const nasc = new Date(ano, (mes - 1), dia);
@@ -333,19 +368,137 @@
       const hoje = new Date();
       let idade = hoje.getFullYear() - nasc.getFullYear();
       const m = hoje.getMonth() - nasc.getMonth();
-      if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) {
-        idade--;
-      }
+      if (m < 0 || (m === 0 && hoje.getDate() < nasc.getDate())) idade--;
       return idade;
     }
+    document.getElementById("nascimento").addEventListener("input", (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 2 && v.length <= 4) v = v.replace(/(\d{2})(\d+)/, "$1/$2");
+      else if (v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
+      e.target.value = v;
+      const idade = calcularIdadeDDMMAAAA(e.target.value);
+      document.getElementById("patientAge").innerHTML = `<i class="fa-solid fa-cake-candles"></i> ${idade !== "" ? `Idade: ${idade} anos` : "Idade: --"}`;
+    });
+    document.getElementById("pressao").addEventListener("input", (e) => {
+      let v = e.target.value.replace(/\D/g, "");
+      if (v.length > 3) v = v.replace(/(\d{2,3})(\d{1,3})/, "$1/$2");
+      e.target.value = v;
+    });
+    function validarPressao(str) {
+      if (!str) return true;
+      return /^\s*\d{2,3}\s*\/\s*\d{1,3}\s*$/.test(str);
+    }
 
-    function atualizarPatientCard() {
-      const dados = JSON.parse(localStorage.getItem(KEY_DADOS) || "null");
+    // Badges
+    function avaliarGlicemia(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 60) return { cls:"badge-orange", msg:"Baixo" }; if (n <= 120) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alto" }; }
+    function avaliarColesterol(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 200) return { cls:"badge-blue", msg:"Desejável" }; if (n < 240) return { cls:"badge-orange", msg:"Limítrofe" }; return { cls:"badge-red", msg:"Alto" }; }
+    function avaliarTrigliceridios(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 150) return { cls:"badge-blue", msg:"Normal" }; if (n < 200) return { cls:"badge-orange", msg:"Limítrofe" }; return { cls:"badge-red", msg:"Alto" }; }
+    function avaliarBPM(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 60) return { cls:"badge-orange", msg:"Baixo" }; if (n <= 100) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alto" }; }
+    function avaliarPressao(val) { if (!val || !val.includes("/")) return { cls:"", msg:"" }; const [s, d] = val.split("/").map(v => parseInt(v, 10)); if (isNaN(s) || isNaN(d)) return { cls:"", msg:"" }; if (s < 90 || d < 60) return { cls:"badge-orange", msg:"Baixa" }; if (s <= 139 && d <= 89) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alta" }; }
+
+    // Pacientes
+    const formDados = document.getElementById("formDados");
+    const limparDadosBtn = document.getElementById("limparDados");
+    const listaPacientes = document.getElementById("listaPacientes");
+
+    formDados.addEventListener("submit", (e) => {
+      e.preventDefault();
+      const idInput = document.getElementById("pacienteId");
+      const nome = document.getElementById("nome").value.trim();
+      if (!nome) { Swal.fire({ icon:'error', title:'Informe o nome do paciente.' }); return; }
+      const paciente = {
+        id: idInput.value ? Number(idInput.value) : Date.now(),
+        nome,
+        nascimento: document.getElementById("nascimento").value.trim(),
+        endereco: document.getElementById("endereco").value.trim(),
+        telefone: document.getElementById("telefone").value.trim(),
+        sangue: document.getElementById("sangue").value
+      };
+      let pacs = encLoad(KEY_PAC, []);
+      const idx = pacs.findIndex(p => p.id === paciente.id);
+      if (idx >= 0) pacs[idx] = paciente; else pacs.push(paciente);
+      encSave(KEY_PAC, pacs);
+      Swal.fire({ icon:'success', title: idx>=0 ? 'Paciente atualizado!' : 'Paciente salvo!', timer:1400, showConfirmButton:false });
+      formDados.reset(); document.getElementById("pacienteId").value = "";
+      atualizarHeaderPaciente(null);
+      renderListaPacientes();
+      carregarPacientesSelect();
+    });
+
+    limparDadosBtn.addEventListener("click", () => {
+      formDados.reset(); document.getElementById("pacienteId").value = "";
+      atualizarHeaderPaciente(null);
+    });
+
+    function renderListaPacientes() {
+      const pacs = encLoad(KEY_PAC, []);
+      listaPacientes.innerHTML = "";
+      if (pacs.length === 0) {
+        const vazio = document.createElement("div");
+        vazio.className = "history-item";
+        vazio.innerHTML = `<i class="fa-regular fa-folder-open"></i> Nenhum paciente cadastrado.`;
+        listaPacientes.appendChild(vazio);
+        return;
+      }
+      pacs.forEach(p => {
+        const item = document.createElement("div");
+        item.className = "history-item";
+        item.innerHTML = `
+          <div class="history-head">
+            <span><i class="fa-solid fa-user"></i> ${p.nome}</span>
+            <span class="badge badge-blue">${p.sangue || "--"}</span>
+          </div>
+          <div class="history-values">
+            <span><strong><i class="fa-solid fa-cake-candles"></i> Nasc.:</strong> ${p.nascimento || "--"}</span>
+            <span><strong><i class="fa-solid fa-phone"></i> Tel.:</strong> ${p.telefone || "--"}</span>
+            <span><strong><i class="fa-solid fa-house"></i> End.:</strong> ${p.endereco || "--"}</span>
+          </div>
+          <div class="actions">
+            <button class="btn secondary" aria-label="Selecionar"><i class="fa-solid fa-check"></i> Selecionar</button>
+            <button class="btn secondary" aria-label="Editar"><i class="fa-solid fa-pen"></i> Editar</button>
+            <button class="btn secondary" aria-label="Remover"><i class="fa-solid fa-trash"></i> Remover</button>
+          </div>
+        `;
+        const [btnSel, btnEdit, btnDel] = item.querySelectorAll(".actions .btn.secondary");
+        btnSel.addEventListener("click", () => {
+          setActiveTab("tab-exames");
+          carregarPacientesSelect(p.id);
+        });
+        btnEdit.addEventListener("click", () => {
+          setActiveTab("tab-dados");
+          document.getElementById("pacienteId").value = p.id;
+          document.getElementById("nome").value = p.nome || "";
+          document.getElementById("nascimento").value = p.nascimento || "";
+          document.getElementById("endereco").value = p.endereco || "";
+          document.getElementById("telefone").value = p.telefone || "";
+          document.getElementById("sangue").value = p.sangue || "";
+          atualizarHeaderPaciente(p);
+        });
+        btnDel.addEventListener("click", () => {
+          Swal.fire({
+            title: 'Remover paciente?',
+            text: 'Exames associados NÃO serão apagados automaticamente.',
+            icon: 'warning', showCancelButton:true, confirmButtonText:'Remover', cancelButtonText:'Cancelar'
+          }).then(res => {
+            if (res.isConfirmed) {
+              const novos = pacs.filter(pp => pp.id !== p.id);
+              encSave(KEY_PAC, novos);
+              renderListaPacientes();
+              carregarPacientesSelect();
+              Swal.fire('Removido!', 'Paciente excluído.', 'success');
+            }
+          });
+        });
+        listaPacientes.appendChild(item);
+      });
+    }
+
+    function atualizarHeaderPaciente(p) {
       const nameEl = document.getElementById("patientName");
       const ageEl = document.getElementById("patientAge");
-      if (dados) {
-        nameEl.innerHTML = `<i class="fa-solid fa-user"></i> ${dados.nome || "Paciente"}`;
-        const idade = calcularIdadeDDMMAAAA(dados.nascimento);
+      if (p) {
+        nameEl.innerHTML = `<i class="fa-solid fa-user"></i> ${p.nome}`;
+        const idade = calcularIdadeDDMMAAAA(p.nascimento);
         ageEl.innerHTML = `<i class="fa-solid fa-cake-candles"></i> ${idade !== "" ? `Idade: ${idade} anos` : "Idade: --"}`;
       } else {
         nameEl.innerHTML = `<i class="fa-solid fa-user"></i> Paciente`;
@@ -353,297 +506,278 @@
       }
     }
 
-    // Máscara de data (text + barras automáticas) e atualização da idade em tempo real
-    const nascInput = document.getElementById("nascimento");
-    nascInput.addEventListener("input", (e) => {
-      let v = e.target.value.replace(/\D/g, "");
-      if (v.length > 2 && v.length <= 4) v = v.replace(/(\d{2})(\d+)/, "$1/$2");
-      else if (v.length > 4) v = v.replace(/(\d{2})(\d{2})(\d+)/, "$1/$2/$3");
-      e.target.value = v;
-
-      const idade = calcularIdadeDDMMAAAA(e.target.value);
-      const ageEl = document.getElementById("patientAge");
-      ageEl.innerHTML = `<i class="fa-solid fa-cake-candles"></i> ${idade !== "" ? `Idade: ${idade} anos` : "Idade: --"}`;
-    });
-
-    // Máscara de pressão arterial (text + barra automática)
-    const pressaoInput = document.getElementById("pressao");
-    if (pressaoInput) {
-      pressaoInput.addEventListener("input", (e) => {
-        let v = e.target.value.replace(/\D/g, "");
-        if (v.length > 3) v = v.replace(/(\d{2,3})(\d{1,3})/, "$1/$2");
-        e.target.value = v;
-      });
-    }
-
-    // Validação simples de pressão arterial (ex: 120/80)
-    function validarPressao(str) {
-      if (!str) return true; // campo opcional
-      return /^\s*\d{2,3}\s*\/\s*\d{1,3}\s*$/.test(str);
-    }
-
-    // Avaliações de exames (para badges)
-    function avaliarGlicemia(v) {
-      const n = Number(v);
-      if (!v && v !== 0) return { cls: "", msg: "" };
-      if (n < 60) return { cls: "badge-orange", msg: "Baixo" };
-      if (n <= 120) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarColesterol(v) {
-      const n = Number(v);
-      if (!v && v !== 0) return { cls: "", msg: "" };
-      if (n < 200) return { cls: "badge-blue", msg: "Desejável" };
-      if (n < 240) return { cls: "badge-orange", msg: "Limítrofe" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarBPM(v) {
-      const n = Number(v);
-      if (!v && v !== 0) return { cls: "", msg: "" };
-      if (n < 60) return { cls: "badge-orange", msg: "Baixo" };
-      if (n <= 100) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alto" };
-    }
-    function avaliarPressao(val) {
-      if (!val || !val.includes("/")) return { cls: "", msg: "" };
-      const [s, d] = val.split("/").map(v => parseInt(v, 10));
-      if (isNaN(s) || isNaN(d)) return { cls: "", msg: "" };
-      if (s < 90 || d < 60) return { cls: "badge-orange", msg: "Baixa" };
-      if (s <= 139 && d <= 89) return { cls: "badge-blue", msg: "Normal" };
-      return { cls: "badge-red", msg: "Alta" };
-    }
-
-    // Form dados pessoais
-    const formDados = document.getElementById("formDados");
-    const limparDadosBtn = document.getElementById("limparDados");
-
-    formDados.addEventListener("submit", (e) => {
-      e.preventDefault();
-      const dadosExist = JSON.parse(localStorage.getItem(KEY_DADOS) || "{}");
-      const dados = {
-        nome: document.getElementById("nome").value.trim() || dadosExist.nome || "",
-        nascimento: document.getElementById("nascimento").value.trim() || dadosExist.nascimento || "",
-        endereco: document.getElementById("endereco").value.trim() || dadosExist.endereco || "",
-        telefone: document.getElementById("telefone").value.trim() || dadosExist.telefone || "",
-        sangue: document.getElementById("sangue").value || dadosExist.sangue || ""
-      };
-      localStorage.setItem(KEY_DADOS, JSON.stringify(dados));
-      atualizarPatientCard();
-      Swal.fire({ icon: 'success', title: 'Sucesso!', text: 'Dados salvos com sucesso.', timer: 1600, showConfirmButton: false });
-    });
-
-    limparDadosBtn.addEventListener("click", () => {
-      formDados.reset();
-      atualizarPatientCard(); // reflete reset visual; não apaga LocalStorage
-    });
-
-    function carregarDados() {
-      const dadosSalvos = JSON.parse(localStorage.getItem(KEY_DADOS) || "null");
-      if (!dadosSalvos) { atualizarPatientCard(); return; }
-      document.getElementById("nome").value = dadosSalvos.nome || "";
-      document.getElementById("nascimento").value = dadosSalvos.nascimento || "";
-      document.getElementById("endereco").value = dadosSalvos.endereco || "";
-      document.getElementById("telefone").value = dadosSalvos.telefone || "";
-      document.getElementById("sangue").value = dadosSalvos.sangue || "";
-      atualizarPatientCard();
-    }
-
-    // Form exames
+    // Exames
     const formExames = document.getElementById("formExames");
     const limparExameBtn = document.getElementById("limparExame");
+    const pacienteSelect = document.getElementById("pacienteSelect");
+
+    function carregarPacientesSelect(preselectId=null) {
+      const pacs = encLoad(KEY_PAC, []);
+      pacienteSelect.innerHTML = "";
+      if (pacs.length === 0) {
+        const opt = document.createElement("option");
+        opt.value = ""; opt.textContent = "Cadastre um paciente primeiro";
+        pacienteSelect.appendChild(opt);
+        return;
+      }
+      pacs.forEach(p => {
+        const opt = document.createElement("option");
+        opt.value = p.id; opt.textContent = p.nome;
+        pacienteSelect.appendChild(opt);
+      });
+      if (preselectId) pacienteSelect.value = preselectId;
+      const current = pacs.find(pp => pp.id === Number(pacienteSelect.value));
+      atualizarHeaderPaciente(current || null);
+      const exaId = document.getElementById("exameId").value;
+      if (!exaId) formExames.reset();
+    }
+
+    pacienteSelect.addEventListener("change", () => {
+      const pacs = encLoad(KEY_PAC, []);
+      const current = pacs.find(pp => pp.id === Number(pacienteSelect.value));
+      atualizarHeaderPaciente(current || null);
+    });
 
     formExames.addEventListener("submit", (e) => {
       e.preventDefault();
-      const glicemia = document.getElementById("glicemia").value.trim();
-      const colesterol = document.getElementById("colesterol").value.trim();
-      const trigliceridios = document.getElementById("trigliceridios")?.value.trim() || "";
+      const pid = Number(pacienteSelect.value);
+      if (!pid) { Swal.fire({ icon:'error', title:'Selecione um paciente.' }); return; }
       const pressao = document.getElementById("pressao").value.trim();
-      const bpm = document.getElementById("bpm").value.trim();
+      if (!validarPressao(pressao)) { Swal.fire({ icon:'error', title:'Formato inválido', text:'Pressão deve ser algo como 120/80.' }); return; }
 
-      if (!validarPressao(pressao)) {
-        Swal.fire({ icon: 'error', title: 'Formato inválido', text: 'Pressão deve ser algo como 120/80.' });
-        return;
-      }
+      const exas = encLoad(KEY_EXA, []);
+      const editIdVal = document.getElementById("exameId").value;
+      const original = editIdVal ? exas.find(x => x.id === Number(editIdVal)) : null;
 
       const exame = {
-        id: Date.now(), // id único
-        glicemia: glicemia || "",
-        colesterol: colesterol || "",
-        trigliceridios: trigliceridios || "",
+        id: editIdVal ? Number(editIdVal) : Date.now(),
+        pacienteId: pid,
+        dataISO: original?.dataISO || new Date().toISOString(),
+        glicemia: document.getElementById("glicemia").value.trim() || "",
+        colesterol: document.getElementById("colesterol").value.trim() || "",
+        trigliceridios: document.getElementById("trigliceridios").value.trim() || "",
         pressao: pressao || "",
-        bpm: bpm || "",
-        dataISO: new Date().toISOString()
+        bpm: document.getElementById("bpm").value.trim() || ""
       };
 
-      const historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
-      historico.push(exame);
-      localStorage.setItem(KEY_HIST, JSON.stringify(historico));
+      const idx = exas.findIndex(e => e.id === exame.id);
+      if (idx >= 0) exas[idx] = exame; else exas.push(exame);
+      encSave(KEY_EXA, exas);
 
-      carregarHistorico();
+      document.getElementById("exameId").value = "";
       formExames.reset();
+      Swal.fire({ icon:'success', title: idx>=0 ? 'Exame atualizado!' : 'Exame salvo!', timer:1400, showConfirmButton:false });
       setActiveTab("tab-historico");
-      Swal.fire({ icon: 'success', title: 'Exame salvo!', timer: 1400, showConfirmButton: false });
+      carregarHistorico();
     });
 
-    limparExameBtn.addEventListener("click", () => formExames.reset());
+    limparExameBtn.addEventListener("click", () => {
+      document.getElementById("exameId").value = "";
+      formExames.reset();
+    });
 
-    // Busca no histórico
-    const buscaInput = document.getElementById("buscaHistorico");
-    buscaInput.addEventListener("input", carregarHistorico);
-
-    // Ordenação controles
+    // Histórico
+    const buscaHistorico = document.getElementById("buscaHistorico");
+    const listaHistorico = document.getElementById("listaHistorico");
     document.getElementById("ordenarRecente").addEventListener("click", () => { ordem = "desc"; carregarHistorico(); });
     document.getElementById("ordenarAntigo").addEventListener("click", () => { ordem = "asc"; carregarHistorico(); });
+    buscaHistorico.addEventListener("input", carregarHistorico);
 
-    // Carregar histórico
     function carregarHistorico() {
-      const lista = document.getElementById("listaHistorico");
-      lista.innerHTML = "";
-      let historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
+      const pacs = encLoad(KEY_PAC, []);
+      let exas = encLoad(KEY_EXA, []);
 
-      // Ordenar
-      historico.sort((a, b) => ordem === "desc"
-        ? new Date(b.dataISO) - new Date(a.dataISO)
-        : new Date(a.dataISO) - new Date(b.dataISO)
-      );
+      exas.sort((a, b) => ordem === "desc" ? new Date(b.dataISO) - new Date(a.dataISO) : new Date(a.dataISO) - new Date(b.dataISO));
 
-      // Filtro
-      const termo = (buscaInput.value || "").toLowerCase().trim();
+      const termo = (buscaHistorico.value || "").toLowerCase().trim();
       if (termo) {
-        historico = historico.filter(exame => {
-          const dataFmt = new Date(exame.dataISO).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }).toLowerCase();
+        exas = exas.filter(ex => {
+          const p = pacs.find(pp => pp.id === ex.pacienteId);
+          const nome = (p ? p.nome : "").toLowerCase();
+          const dataFmt = new Date(ex.dataISO).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" }).toLowerCase();
           return (
-            dataFmt.includes(termo) ||
-            String(exame.glicemia).toLowerCase().includes(termo) ||
-            String(exame.colesterol).toLowerCase().includes(termo) ||
-            String(exame.trigliceridios).toLowerCase().includes(termo) ||
-            String(exame.pressao).toLowerCase().includes(termo) ||
-            String(exame.bpm).toLowerCase().includes(termo)
+            nome.includes(termo) || dataFmt.includes(termo) ||
+            String(ex.glicemia).toLowerCase().includes(termo) ||
+            String(ex.colesterol).toLowerCase().includes(termo) ||
+            String(ex.trigliceridios).toLowerCase().includes(termo) ||
+            String(ex.pressao).toLowerCase().includes(termo) ||
+            String(ex.bpm).toLowerCase().includes(termo)
           );
         });
       }
 
-      // Render
-      historico.forEach(exame => {
-        const dataFmt = new Date(exame.dataISO).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+      const grupo = {};
+      exas.forEach(ex => { if (!grupo[ex.pacienteId]) grupo[ex.pacienteId] = []; grupo[ex.pacienteId].push(ex); });
 
-        const g = avaliarGlicemia(exame.glicemia);
-        const c = avaliarColesterol(exame.colesterol);
-        const t = avaliarGlicemia(exame.trigliceridios); // você pode criar uma função específica se quiser outra escala
-        const p = avaliarPressao(exame.pressao);
-        const b = avaliarBPM(exame.bpm);
+      listaHistorico.innerHTML = "";
 
-        const item = document.createElement("div");
-        item.className = "history-item";
-
-        const head = document.createElement("div");
-        head.className = "history-head";
-        head.innerHTML = `<span><i class="fa-solid fa-calendar-day"></i> Data: ${dataFmt}</span>
-                          <span class="badge badge-blue"><i class="fa-solid fa-vial"></i> Exame</span>`;
-
-        const values = document.createElement("div");
-        values.className = "history-values";
-        values.innerHTML = `
-          <div><strong><i class="fa-solid fa-syringe"></i> Glicemia:</strong> ${exame.glicemia || "--"} ${g.msg ? `<span class="badge ${g.cls}">${g.msg}</span>` : ""}</div>
-          <div><strong><i class="fa-solid fa-heart-pulse"></i> Colesterol:</strong> ${exame.colesterol || "--"} ${c.msg ? `<span class="badge ${c.cls}">${c.msg}</span>` : ""}</div>
-          <div><strong><i class="fa-solid fa-vial"></i> Triglicerídeos:</strong> ${exame.trigliceridios || "--"} ${t.msg ? `<span class="badge ${t.cls}">${t.msg}</span>` : ""}</div>
-          <div><strong><i class="fa-solid fa-stethoscope"></i> Pressão:</strong> ${exame.pressao || "--"} ${p.msg ? `<span class="badge ${p.cls}">${p.msg}</span>` : ""}</div>
-          <div><strong><i class="fa-solid fa-heart"></i> BPM:</strong> ${exame.bpm || "--"} ${b.msg ? `<span class="badge ${b.cls}">${b.msg}</span>` : ""}</div>
-        `;
-
-        const actions = document.createElement("div");
-        actions.className = "actions";
-        const removerBtn = document.createElement("button");
-        removerBtn.className = "btn secondary";
-        removerBtn.innerHTML = `<i class="fa-solid fa-trash"></i> Remover`;
-        removerBtn.addEventListener("click", () => {
-          Swal.fire({
-            title: 'Remover este exame?',
-            text: "Essa ação não pode ser desfeita.",
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonColor: '#2563eb',
-            cancelButtonColor: '#9ca3af',
-            confirmButtonText: 'Sim, remover',
-            cancelButtonText: 'Cancelar'
-          }).then((result) => {
-            if (result.isConfirmed) {
-              removerEntrada(exame.id);
-              Swal.fire('Removido!', 'O exame foi excluído.', 'success');
-            }
-          });
-        });
-
-        actions.appendChild(removerBtn);
-        item.appendChild(head);
-        item.appendChild(values);
-        item.appendChild(actions);
-        lista.appendChild(item);
-      });
-
-      if (historico.length === 0) {
+      const ids = Object.keys(grupo);
+      if (ids.length === 0) {
         const vazio = document.createElement("div");
         vazio.className = "history-item";
         vazio.innerHTML = `<i class="fa-regular fa-folder-open"></i> Nenhum exame encontrado.`;
-        lista.appendChild(vazio);
+        listaHistorico.appendChild(vazio);
+        return;
       }
+
+      ids.forEach(pidStr => {
+        const pid = Number(pidStr);
+        const p = pacs.find(pp => pp.id === pid);
+
+        const card = document.createElement("div");
+        card.className = "history-card";
+
+        const title = document.createElement("div");
+        title.className = "history-title";
+        title.innerHTML = `
+          <h3><i class="fa-solid fa-user"></i> ${p ? p.nome : "Paciente removido"} ${p && p.sangue ? `<span class="badge badge-blue">${p.sangue}</span>` : ""}</h3>
+          <span><i class="fa-solid fa-cake-candles"></i> ${p && p.nascimento ? p.nascimento : "--"}</span>
+        `;
+        card.appendChild(title);
+
+        grupo[pid].forEach(exame => {
+          const dataFmt = new Date(exame.dataISO).toLocaleString("pt-BR", { dateStyle: "short", timeStyle: "short" });
+          const g = avaliarGlicemia(exame.glicemia);
+          const c = avaliarColesterol(exame.colesterol);
+          const t = avaliarTrigliceridios(exame.trigliceridios);
+          const pr = avaliarPressao(exame.pressao);
+          const b = avaliarBPM(exame.bpm);
+
+          const item = document.createElement("div");
+          item.className = "history-item";
+
+          const head = document.createElement("div");
+          head.className = "history-head";
+          head.innerHTML = `
+            <span><i class="fa-solid fa-calendar-day"></i> ${dataFmt}</span>
+            <span class="badge badge-blue"><i class="fa-solid fa-vial"></i> Exame</span>
+          `;
+
+          const values = document.createElement("div");
+          values.className = "history-values";
+          values.innerHTML = `
+            <div><strong><i class="fa-solid fa-user"></i> Paciente:</strong> ${p ? p.nome : "--"}</div>
+            <div><strong><i class="fa-solid fa-syringe"></i> Glicemia:</strong> ${exame.glicemia || "--"} ${g.msg ? `<span class="badge ${g.cls}">${g.msg}</span>` : ""}</div>
+            <div><strong><i class="fa-solid fa-heart-pulse"></i> Colesterol:</strong> ${exame.colesterol || "--"} ${c.msg ? `<span class="badge ${c.cls}">${c.msg}</span>` : ""}</div>
+            <div><strong><i class="fa-solid fa-vial"></i> Triglicerídeos:</strong> ${exame.trigliceridios || "--"} ${t.msg ? `<span class="badge ${t.cls}">${t.msg}</span>` : ""}</div>
+            <div><strong><i class="fa-solid fa-stethoscope"></i> Pressão:</strong> ${exame.pressao || "--"} ${pr.msg ? `<span class="badge ${pr.cls}">${pr.msg}</span>` : ""}</div>
+            <div><strong><i class="fa-solid fa-heart"></i> BPM:</strong> ${exame.bpm || "--"} ${b.msg ? `<span class="badge ${b.cls}">${b.msg}</span>` : ""}</div>
+          `;
+
+          const actions = document.createElement("div");
+          actions.className = "actions";
+          const editarBtn = document.createElement("button");
+          editarBtn.className = "btn secondary";
+          editarBtn.innerHTML = `<i class="fa-solid fa-pen"></i> Editar`;
+          editarBtn.addEventListener("click", () => editarExame(exame.id));
+
+          const removerBtn = document.createElement("button");
+          removerBtn.className = "btn secondary";
+          removerBtn.innerHTML = `<i class="fa-solid fa-trash"></i> Remover`;
+          removerBtn.addEventListener("click", () => {
+            Swal.fire({
+              title: 'Remover este exame?', text: "Essa ação não pode ser desfeita.",
+              icon: 'warning', showCancelButton: true, confirmButtonText: 'Sim, remover', cancelButtonText: 'Cancelar'
+            }).then((result) => {
+              if (result.isConfirmed) {
+                removerExame(exame.id);
+                Swal.fire('Removido!', 'O exame foi excluído.', 'success');
+              }
+            });
+          });
+
+          actions.appendChild(editarBtn);
+          actions.appendChild(removerBtn);
+          item.appendChild(head);
+          item.appendChild(values);
+          item.appendChild(actions);
+          card.appendChild(item);
+        });
+
+        listaHistorico.appendChild(card);
+      });
     }
 
-    function removerEntrada(id) {
-      const historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
-      const novo = historico.filter(h => h.id !== id);
-      localStorage.setItem(KEY_HIST, JSON.stringify(novo));
+    function editarExame(exameId) {
+      const exas = encLoad(KEY_EXA, []);
+      const ex = exas.find(e => e.id === exameId);
+      if (!ex) return;
+      setActiveTab("tab-exames");
+      document.getElementById("exameId").value = ex.id;
+      carregarPacientesSelect(ex.pacienteId);
+      document.getElementById("glicemia").value = ex.glicemia || "";
+      document.getElementById("colesterol").value = ex.colesterol || "";
+      document.getElementById("trigliceridios").value = ex.trigliceridios || "";
+      document.getElementById("pressao").value = ex.pressao || "";
+      document.getElementById("bpm").value = ex.bpm || "";
+    }
+
+    function removerExame(id) {
+      const exas = encLoad(KEY_EXA, []);
+      const novos = exas.filter(e => e.id !== id);
+      encSave(KEY_EXA, novos);
       carregarHistorico();
     }
 
-    // Salvar em PDF: dados do paciente + exames
+    // Apagar todo histórico (exames)
+    document.getElementById("apagarHistorico").addEventListener("click", () => {
+      Swal.fire({
+        title: "Apagar todo histórico?",
+        text: "Isso removerá todos os exames de todos os pacientes.",
+        icon: "warning", showCancelButton: true, confirmButtonText: "Sim, apagar", cancelButtonText: "Cancelar"
+      }).then(res => {
+        if (res.isConfirmed) {
+          localStorage.removeItem(KEY_EXA); // remove cifrado
+          carregarHistorico();
+          Swal.fire("Apagado!", "Todo o histórico foi removido.", "success");
+        }
+      });
+    });
+
+    // PDF (pacientes + exames) com dados decifrados
     document.getElementById("salvarPDF").addEventListener("click", () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
 
-      // Header
+      const pacs = encLoad(KEY_PAC, []);
+      let exas = encLoad(KEY_EXA, []);
+      exas.sort((a, b) => new Date(b.dataISO) - new Date(a.dataISO));
+
       doc.setFontSize(18);
       doc.text("Relatório de Saúde", 14, 20);
-
-      // Dados do paciente
-      const dados = JSON.parse(localStorage.getItem(KEY_DADOS) || "{}");
-      doc.setFontSize(13);
-      doc.text("Dados do paciente", 14, 32);
       doc.setFontSize(11);
-      doc.text(`Nome: ${dados.nome || "--"}`, 14, 42);
-      doc.text(`Nascimento: ${dados.nascimento || "--"}`, 14, 50);
-      doc.text(`Endereço: ${dados.endereco || "--"}`, 14, 58);
-      doc.text(`Telefone: ${dados.telefone || "--"}`, 14, 66);
-      doc.text(`Tipo sanguíneo: ${dados.sangue || "--"}`, 14, 74);
+      doc.text("Gerado em: " + new Date().toLocaleString("pt-BR"), 14, 28);
 
-      // Exames
-      let historico = JSON.parse(localStorage.getItem(KEY_HIST) || "[]");
-      doc.setFontSize(13);
-      const yStart = 88;
-      doc.text("Exames", 14, yStart);
+      let y = 36;
 
-      doc.setFontSize(11);
-      let y = yStart + 10;
+      // Pacientes
+      doc.setFontSize(13); doc.text("Pacientes cadastrados", 14, y); y += 8; doc.setFontSize(11);
+      if (pacs.length === 0) { doc.text("Nenhum paciente.", 14, y); y += 10; }
+      else {
+        pacs.forEach((p, i) => {
+          doc.text(`${i+1}. ${p.nome || "--"} | Nasc.: ${p.nascimento || "--"} | Tel.: ${p.telefone || "--"} | Sangue: ${p.sangue || "--"}`, 14, y);
+          y += 6; if (y > 270) { doc.addPage(); y = 20; }
+        });
+        y += 4;
+      }
 
-      if (historico.length === 0) {
-        doc.text("Nenhum exame registrado.", 14, y);
-      } else {
-        // ordenar por data (mais recentes)
-        historico.sort((a, b) => new Date(b.dataISO) - new Date(a.dataISO));
-
-        historico.forEach((exame, i) => {
-          const dataFmt = new Date(exame.dataISO).toLocaleString("pt-BR");
-          doc.text(`${i + 1}. Data: ${dataFmt}`, 14, y); y += 6;
-          doc.text(`   Glicemia: ${exame.glicemia || "--"}`, 14, y); y += 6;
-          doc.text(`   Colesterol: ${exame.colesterol || "--"}`, 14, y); y += 6;
-          doc.text(`   Triglicerídeos: ${exame.trigliceridios || "--"}`, 14, y); y += 6;
-          doc.text(`   Pressão: ${exame.pressao || "--"}`, 14, y); y += 6;
-          doc.text(`   BPM: ${exame.bpm || "--"}`, 14, y); y += 10;
-
-          if (y > 270) { // quebra de página
-            doc.addPage();
-            y = 20;
-          }
+      // Exames por paciente
+      doc.setFontSize(13); doc.text("Exames por paciente", 14, y); y += 8; doc.setFontSize(11);
+      if (exas.length === 0) { doc.text("Nenhum exame registrado.", 14, y); }
+      else {
+        const grupo = {}; exas.forEach(ex => { if (!grupo[ex.pacienteId]) grupo[ex.pacienteId] = []; grupo[ex.pacienteId].push(ex); });
+        Object.keys(grupo).forEach(pidStr => {
+          const pid = Number(pidStr);
+          const p = pacs.find(pp => pp.id === pid);
+          doc.text(`Paciente: ${p ? p.nome : "Paciente removido"} (${p && p.sangue ? p.sangue : "--"})`, 14, y); y += 6;
+          grupo[pid].forEach((ex, idx) => {
+            const dataFmt = new Date(ex.dataISO).toLocaleString("pt-BR");
+            doc.text(`  ${idx+1}. ${dataFmt}`, 14, y); y += 6;
+            doc.text(`     Glicemia: ${ex.glicemia || "--"} | Colesterol: ${ex.colesterol || "--"} | Triglicerídeos: ${ex.trigliceridios || "--"}`, 14, y); y += 6;
+            doc.text(`     Pressão: ${ex.pressao || "--"} | BPM: ${ex.bpm || "--"}`, 14, y); y += 8;
+            if (y > 270) { doc.addPage(); y = 20; }
+          });
+          y += 4; if (y > 270) { doc.addPage(); y = 20; }
         });
       }
 
@@ -651,11 +785,14 @@
       Swal.fire({ icon: 'success', title: 'PDF gerado!', text: 'Relatório salvo com sucesso.', timer: 1600, showConfirmButton: false });
     });
 
-    // Inicialização
-    window.addEventListener("DOMContentLoaded", () => {
-      carregarDados();
+    // Inicialização protegida
+    window.addEventListener("DOMContentLoaded", async () => {
+      const ok = await ensurePassword();
+      if (!ok) return;
+      setActiveTab("tab-dados");
+      renderListaPacientes();
+      carregarPacientesSelect();
       carregarHistorico();
-      setActiveTab("tab-dados"); // abre "Meus dados" inicialmente
     });
   </script>
 </body>
