@@ -2,8 +2,7 @@
 <html lang="pt-BR">
 <head>
   <meta charset="UTF-8" />
-
-  <title>Painel de Saúde Multi-Pacientes</title>
+  <title>Painel de Saúde do KAKA</title>
 
   <!-- SweetAlert2 -->
   <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
@@ -59,7 +58,7 @@
     .btn.secondary:hover { background:#e5e7eb; }
     .btn-remove { background: var(--red) !important; color:#fff !important; }
     .btn-remove:hover { background:#b91c1c !important; }
-    .sidebar-footer { margin-top:230px; } /* fixa o botão sair no rodapé */
+    .sidebar-footer { margin-top:230px; }
 
     /* Content */
     .container { max-width: 1200px; margin: 30px auto; padding: 0 16px; }
@@ -76,7 +75,7 @@
     .grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:16px; }
     @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
     label { font-size:13px; font-weight:600; margin-bottom:6px; display:block; }
-    input, select { width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; color:#111827; }
+    input, select, textarea { width:100%; padding:12px; border:1px solid #e5e7eb; border-radius:12px; background:#fff; color:#111827; }
     input::placeholder { color:#9ca3af; }
     .actions { display:flex; gap:10px; margin-top:12px; flex-wrap:wrap; align-items:center; }
 
@@ -96,7 +95,29 @@
     .input-inline { flex:1; padding:10px 12px; border:1px solid #e5e7eb; border-radius:10px; background:#fff; }
     .whatsapp-btn { background:#25D366; color:#fff; border:none; border-radius:6px; padding:6px 10px; cursor:pointer; }
     .whatsapp-btn:hover { background:#1ebe5d; }
-    
+
+    /* Profissionais */
+    .pro-header { display:flex; gap:10px; flex-wrap:wrap; margin-bottom:8px; }
+    .pro-info { font-size:13px; color:#475569; }
+    .table { width:100%; border-collapse: collapse; margin-top:8px; }
+    .table th, .table td { border:1px solid #e5e7eb; padding:8px; text-align:left; font-size:13px; }
+    .table th { background: #f3f4f6; font-weight:800; }
+    .chip { display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; background:#eef2ff; color:#1e3a8a; font-weight:700; font-size:12px; }
+    .muted { color:#6b7280; font-size:12px; }
+    .exams-grid { display:grid; grid-template-columns: repeat(2, 1fr); gap:8px; text-align:left; }
+    @media (max-width:600px) { .exams-grid { grid-template-columns: 1fr; } }
+
+    /* Lista vertical para exames no pop-up */
+    .exams-list label { display:block; margin-bottom:6px; }
+    /* Mantém checkbox antes do texto e tudo na mesma linha */
+.exams-list label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+  white-space: nowrap; /* evita quebra no meio do nome */
+}
+
   </style>
 </head>
 <body>
@@ -125,6 +146,7 @@
     <a href="#" class="nav-link active" data-tab="tab-dados"><i class="fa-solid fa-user"></i> Pacientes</a>
     <a href="#" class="nav-link" data-tab="tab-exames"><i class="fa-solid fa-vial"></i> Exames</a>
     <a href="#" class="nav-link" data-tab="tab-historico"><i class="fa-solid fa-clock-rotate-left"></i> Histórico</a>
+    <a href="#" class="nav-link" data-tab="tab-profissionais"><i class="fa-solid fa-user-doctor"></i> Profissionais</a>
 
     <button id="btnToggleConfig" class="btn secondary" style="margin-top:8px;"><i class="fa-solid fa-gear"></i> Configurações</button>
     <div id="configButtons" class="sidebar-buttons" style="display:none;">
@@ -133,7 +155,6 @@
       <button class="btn secondary" id="btnForgot"><i class="fa-solid fa-circle-question"></i> Esqueci minha senha</button>
     </div>
 
-    <!-- Rodapé fixo com Sair -->
     <div class="sidebar-footer">
       <button class="btn secondary" id="btnLogout"><i class="fa-solid fa-right-from-bracket"></i> Sair</button>
     </div>
@@ -174,6 +195,14 @@
               <input id="telefone" type="tel" placeholder="(xx) xxxxx-xxxx" />
             </div>
             <div>
+              <label for="cpf"><i class="fa-solid fa-id-card"></i> CPF</label>
+              <input id="cpf" type="text" placeholder="000.000.000-00" />
+            </div>
+            <div>
+              <label for="agente"><i class="fa-solid fa-user-nurse"></i> Agente de Saúde</label>
+              <input id="agente" type="text" placeholder="Nome do agente" />
+            </div>
+            <div>
               <label for="sangue"><i class="fa-solid fa-droplet"></i> Tipo sanguíneo</label>
               <select id="sangue">
                 <option value="">Selecione</option>
@@ -193,6 +222,9 @@
         </form>
 
         <div class="card" style="margin-top:16px;">
+          <div class="actions" style="margin-bottom:8px;">
+            <input type="text" id="buscaPacientes" class="input-inline" placeholder="Buscar por nome, CPF ou agente" />
+          </div>
           <h3><i class="fa-solid fa-users"></i> Pacientes cadastrados</h3>
           <div id="listaPacientes" class="history-list" style="display:none;"></div>
         </div>
@@ -246,20 +278,66 @@
         </div>
         <div id="listaHistorico" class="history-list"></div>
       </div>
+
+      <!-- Profissionais -->
+      <div id="tab-profissionais" class="tab">
+        <div class="pro-header">
+          <div class="chip"><i class="fa-solid fa-stethoscope"></i> Médico(a): 10 consultas diárias (Seg-Sex)</div>
+          <div class="chip"><i class="fa-solid fa-user-nurse"></i> Enfermeiro(a): 15 consultas diárias (Seg-Sex)</div>
+        </div>
+        <p class="pro-info">Selecione o profissional e agende uma consulta. A data deve ser em dia útil (segunda a sexta). Se um paciente estiver selecionado, os dados serão usados automaticamente.</p>
+
+        <div class="actions">
+          <button class="btn" id="btnAgendaMedico" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-user-doctor"></i> Agendar Médico(a)</button>
+          <button class="btn" id="btnAgendaEnfermeiro" style="background:#2563eb; color:#fff;"><i class="fa-solid fa-user-nurse"></i> Agendar Enfermeiro(a)</button>
+          <button class="btn secondary" id="btnExamesLab"><i class="fa-solid fa-vials"></i> Exames laboratoriais</button>
+          <button class="btn secondary" id="btnExportAgenda"><i class="fa-solid fa-file-pdf"></i> Exportar agenda PDF</button>
+          <button class="btn btn-remove" id="btnLimparAgenda"><i class="fa-solid fa-trash"></i> Limpar agenda do dia</button>
+        </div>
+
+        <div class="card" style="margin-top:12px;">
+          <h3><i class="fa-solid fa-calendar-days"></i> Agenda</h3>
+          <div class="actions" style="margin-bottom:8px;">
+            <input type="date" id="agendaData" class="input-inline" />
+            <button class="btn secondary" id="btnHoje"><i class="fa-solid fa-clock"></i> Hoje</button>
+            <input type="text" id="buscaAgenda" class="input-inline" placeholder="Buscar na agenda por nome, CPF ou agente" />
+            <span class="muted" id="vagasInfo"></span>
+          </div>
+          <table class="table" id="tabelaAgenda">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Data</th>
+                <th>Profissional</th>
+                <th>Nome</th>
+                <th>Endereço</th>
+                <th>CPF</th>
+                <th>Telefone</th>
+                <th>Agente de Saúde</th>
+                <th>Ações</th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
     </section>
   </main>
 
   <script>
-    // Chaves e estado
+    // ======== CHAVES E ESTADO ========
     const KEY_PAC = "pacientes_enc";
     const KEY_EXA = "exames_enc";
     const KEY_PASS = "painelSenha";
     const KEY_HINT = "painelHint";
     const KEY_LOGGED = "painelLogado";
+    const KEY_AGD = "agenda_enc";
+
     let SECRET = "";
     let ordem = "desc";
+    let pacienteSelecionado = null;
 
-    // Criptografia
+    // ======== CRIPTOGRAFIA ========
     function encSave(key, obj) {
       try {
         const text = JSON.stringify(obj);
@@ -278,7 +356,7 @@
       } catch (e) { console.warn("Erro ao carregar/decifrar:", e); return fallback; }
     }
 
-    // Dica no login
+    // ======== LOGIN - DICA ========
     function showHintIfExists() {
       const hint = localStorage.getItem(KEY_HINT) || "";
       const el = document.getElementById("loginHint");
@@ -286,13 +364,12 @@
       else { el.style.display = "none"; }
     }
 
-    // Esqueci minha senha (login) inline
     document.getElementById("forgotBtnLogin").addEventListener("click", () => {
       const el = document.getElementById("loginHint");
       el.style.display = "block";
       el.style.color = "#dc2626";
       el.style.fontWeight = "700";
-      el.innerHTML = "Esqueci minha senha: isso apagará TODOS os dados (pacientes e exames) e a senha atual.<br>Para prosseguir, confirme abaixo.";
+      el.innerHTML = "Esqueci minha senha: isso apagará TODOS os dados (pacientes, exames, agenda) e a senha atual.<br>Para prosseguir, confirme abaixo.";
       const confirmBtn = document.createElement("button");
       confirmBtn.className = "btn btn-remove";
       confirmBtn.style.marginTop = "10px";
@@ -300,6 +377,7 @@
       confirmBtn.onclick = async () => {
         localStorage.removeItem(KEY_PAC);
         localStorage.removeItem(KEY_EXA);
+        localStorage.removeItem(KEY_AGD);
         localStorage.removeItem(KEY_PASS);
         localStorage.removeItem(KEY_HINT);
         localStorage.removeItem(KEY_LOGGED);
@@ -312,7 +390,7 @@
       }
     });
 
-    // Login
+    // ======== LOGIN ========
     document.getElementById("loginBtn").addEventListener("click", async () => {
       const senhaSalva = localStorage.getItem(KEY_PASS);
       const tentativa = document.getElementById("loginPassword").value.trim();
@@ -342,6 +420,8 @@
         renderListaPacientes();
         carregarPacientesSelect();
         carregarHistorico();
+        initAgendaDefaults();
+        renderAgenda();
         return;
       }
 
@@ -359,15 +439,16 @@
       renderListaPacientes();
       carregarPacientesSelect();
       carregarHistorico();
+      initAgendaDefaults();
+      renderAgenda();
     });
 
-    // Configurações toggle
+    // ======== CONFIGURAÇÕES ========
     document.getElementById("btnToggleConfig").addEventListener("click", () => {
       const cfg = document.getElementById("configButtons");
       cfg.style.display = (cfg.style.display === "none" || cfg.style.display === "") ? "flex" : "none";
     });
 
-    // Trocar senha
     async function trocarSenha() {
       const senhaSalva = localStorage.getItem(KEY_PASS);
       if (!senhaSalva) { await Swal.fire({ icon:"error", title:"Nenhuma senha configurada" }); return; }
@@ -400,18 +481,19 @@
       SECRET = atual;
       const pacs = encLoad(KEY_PAC, []);
       const exas = encLoad(KEY_EXA, []);
+      const agds = encLoad(KEY_AGD, []);
       localStorage.setItem(KEY_PASS, dados.pass);
       if ((dados.hint || "").trim()) localStorage.setItem(KEY_HINT, dados.hint.trim());
       else localStorage.removeItem(KEY_HINT);
       SECRET = dados.pass;
       encSave(KEY_PAC, pacs);
       encSave(KEY_EXA, exas);
+      encSave(KEY_AGD, agds);
       await Swal.fire({ icon:"success", title:"Senha (e dica) alteradas!" });
       showHintIfExists();
     }
     document.getElementById("btnTrocarSenha").addEventListener("click", trocarSenha);
 
-    // Editar dica
     async function editarDicaSenha() {
       const atual = localStorage.getItem(KEY_HINT) || "";
       const { value: nova } = await Swal.fire({
@@ -426,7 +508,6 @@
     }
     document.getElementById("btnEditarDica").addEventListener("click", editarDicaSenha);
 
-    // Esqueci senha (in-app): instrução
     document.getElementById("btnForgot").addEventListener("click", () => {
       Swal.fire({
         icon: "info",
@@ -435,7 +516,6 @@
       });
     });
 
-    // Logout (botão Sair fixado embaixo)
     async function logout() {
       const confirm = await Swal.fire({
         title:"Sair do painel?",
@@ -448,7 +528,7 @@
     }
     document.getElementById("btnLogout").addEventListener("click", logout);
 
-    // Sidebar e tabs + History API
+    // ======== SIDEBAR / TABS ========
     document.getElementById("menuBtn").onclick = ()=> document.getElementById("sidebar").classList.toggle("active");
     document.querySelectorAll(".nav-link").forEach(link => {
       link.addEventListener("click", (e) => {
@@ -456,6 +536,7 @@
         const tabId = link.getAttribute("data-tab");
         setActiveTab(tabId);
         document.getElementById("sidebar").classList.remove("active");
+        window.scrollTo({ top: 0, behavior: "smooth" });
       });
     });
     function setActiveTab(id) {
@@ -468,6 +549,7 @@
       history.pushState({ tab: id }, "", "#" + id);
       if (id === "tab-exames") carregarPacientesSelect();
       if (id === "tab-historico") carregarHistorico();
+      if (id === "tab-profissionais") { initAgendaDefaults(); renderAgenda(); }
     }
     window.addEventListener("popstate", (event) => {
       const logado = localStorage.getItem(KEY_LOGGED) === "true";
@@ -485,9 +567,10 @@
       if (nav) nav.classList.add('active');
       if (tab === "tab-exames") carregarPacientesSelect();
       if (tab === "tab-historico") carregarHistorico();
+      if (tab === "tab-profissionais") { initAgendaDefaults(); renderAgenda(); }
     });
 
-    // Utils
+    // ======== UTILS ========
     function calcularIdadeDDMMAAAA(strData) {
       if (!strData || strData.length !== 10) return "";
       const [dia, mes, ano] = strData.split("/").map(Number);
@@ -514,18 +597,19 @@
     });
     function validarPressao(str) { if (!str) return true; return /^\s*\d{2,3}\s*\/\s*\d{1,3}\s*$/.test(str); }
 
-    // Badges
+    // ======== BADGES EXAMES ========
     function avaliarGlicemia(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 60) return { cls:"badge-orange", msg:"Baixo" }; if (n <= 120) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alto" }; }
     function avaliarColesterol(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 200) return { cls:"badge-blue", msg:"Desejável" }; if (n < 240) return { cls:"badge-orange", msg:"Limítrofe" }; return { cls:"badge-red", msg:"Alto" }; }
     function avaliarTrigliceridios(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 150) return { cls:"badge-blue", msg:"Normal" }; if (n < 200) return { cls:"badge-orange", msg:"Limítrofe" }; return { cls:"badge-red", msg:"Alto" }; }
     function avaliarBPM(v) { const n = Number(v); if (!v && v !== 0) return { cls:"", msg:"" }; if (n < 60) return { cls:"badge-orange", msg:"Baixo" }; if (n <= 100) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alto" }; }
     function avaliarPressao(val) { if (!val || !val.includes("/")) return { cls:"", msg:"" }; const [s, d] = val.split("/").map(v => parseInt(v, 10)); if (isNaN(s) || isNaN(d)) return { cls:"", msg:"" }; if (s < 90 || d < 60) return { cls:"badge-orange", msg:"Baixa" }; if (s <= 139 && d <= 89) return { cls:"badge-blue", msg:"Normal" }; return { cls:"badge-red", msg:"Alta" }; }
 
-    // Pacientes
+    // ======== PACIENTES ========
     const formDados = document.getElementById("formDados");
     const limparDadosBtn = document.getElementById("limparDados");
     const listaPacientes = document.getElementById("listaPacientes");
     const togglePacientesBtn = document.getElementById("togglePacientes");
+    const buscaPacientes = document.getElementById("buscaPacientes");
 
     formDados.addEventListener("submit", (e) => {
       e.preventDefault();
@@ -538,12 +622,15 @@
         nascimento: document.getElementById("nascimento").value.trim(),
         endereco: document.getElementById("endereco").value.trim(),
         telefone: document.getElementById("telefone").value.trim(),
+        cpf: document.getElementById("cpf").value.trim(),
+        agente: document.getElementById("agente").value.trim(),
         sangue: document.getElementById("sangue").value
       };
       let pacs = encLoad(KEY_PAC, []);
       const idx = pacs.findIndex(p => p.id === paciente.id);
       if (idx >= 0) pacs[idx] = paciente; else pacs.push(paciente);
       encSave(KEY_PAC, pacs);
+      pacienteSelecionado = paciente;
       Swal.fire({ icon:'success', title: idx>=0 ? 'Paciente atualizado!' : 'Paciente salvo!', timer:1400, showConfirmButton:false });
       formDados.reset(); document.getElementById("pacienteId").value = "";
       atualizarHeaderPaciente(null);
@@ -554,10 +641,12 @@
     limparDadosBtn.addEventListener("click", () => {
       formDados.reset(); document.getElementById("pacienteId").value = "";
       atualizarHeaderPaciente(null);
+      pacienteSelecionado = null;
       document.getElementById("apagarPacienteSelecionado").style.display = "none";
     });
 
-    // Mostrar/Esconder lista de pacientes
+    buscaPacientes.addEventListener("input", renderListaPacientes);
+
     togglePacientesBtn.addEventListener("click", () => {
       const div = document.getElementById("listaPacientes");
       const isHidden = div.style.display === "none" || div.style.display === "";
@@ -578,7 +667,14 @@
         listaPacientes.appendChild(vazio);
         return;
       }
-      // Ordenação alfabética
+      const termo = (buscaPacientes.value || "").toLowerCase().trim();
+      if (termo) {
+        pacs = pacs.filter(p =>
+          (p.nome || "").toLowerCase().includes(termo) ||
+          (p.cpf || "").toLowerCase().includes(termo) ||
+          (p.agente || "").toLowerCase().includes(termo)
+        );
+      }
       pacs.sort((a,b)=> (a.nome||"").localeCompare(b.nome||""));
 
       pacs.forEach(p => {
@@ -592,6 +688,8 @@
           <div class="history-values">
             <span><strong><i class="fa-solid fa-cake-candles"></i> Nasc.:</strong> ${p.nascimento || "--"}</span>
             <span><strong><i class="fa-solid fa-phone"></i> Tel.:</strong> ${p.telefone || "--"}</span>
+            <span><strong><i class="fa-solid fa-id-card"></i> CPF:</strong> ${p.cpf || "--"}</span>
+            <span><strong><i class="fa-solid fa-user-nurse"></i> Agente:</strong> ${p.agente || "--"}</span>
             <span><strong><i class="fa-solid fa-house"></i> End.:</strong> ${p.endereco || "--"}</span>
           </div>
           <div class="actions">
@@ -603,19 +701,23 @@
         `;
         const [btnSel, btnEdit, btnDel, btnZap] = item.querySelectorAll(".actions .btn, .actions .whatsapp-btn");
         btnSel.addEventListener("click", () => {
+          pacienteSelecionado = p;
+          Swal.fire({ icon:'success', title:'Paciente selecionado', text:p.nome, timer:1000, showConfirmButton:false });
           setActiveTab("tab-exames");
           carregarPacientesSelect(p.id);
         });
         btnEdit.addEventListener("click", () => {
           setActiveTab("tab-dados");
+          pacienteSelecionado = p;
           document.getElementById("pacienteId").value = p.id;
           document.getElementById("nome").value = p.nome || "";
           document.getElementById("nascimento").value = p.nascimento || "";
           document.getElementById("endereco").value = p.endereco || "";
           document.getElementById("telefone").value = p.telefone || "";
+          document.getElementById("cpf").value = p.cpf || "";
+          document.getElementById("agente").value = p.agente || "";
           document.getElementById("sangue").value = p.sangue || "";
           atualizarHeaderPaciente(p);
-          // Mostrar botão "Remover selecionado"
           const remSel = document.getElementById("apagarPacienteSelecionado");
           remSel.style.display = "inline-flex";
           remSel.onclick = () => {
@@ -628,6 +730,7 @@
                 let lista = encLoad(KEY_PAC, []);
                 const novos = lista.filter(pp => pp.id !== p.id);
                 encSave(KEY_PAC, novos);
+                pacienteSelecionado = null;
                 formDados.reset(); document.getElementById("pacienteId").value = "";
                 atualizarHeaderPaciente(null);
                 renderListaPacientes();
@@ -648,6 +751,7 @@
               let lista = encLoad(KEY_PAC, []);
               const novos = lista.filter(pp => pp.id !== p.id);
               encSave(KEY_PAC, novos);
+              if (pacienteSelecionado && pacienteSelecionado.id === p.id) pacienteSelecionado = null;
               renderListaPacientes();
               carregarPacientesSelect();
               Swal.fire('Removido!', 'Paciente excluído.', 'success');
@@ -656,7 +760,7 @@
         });
         btnZap.addEventListener("click", () => {
           const tel = (p.telefone || "").replace(/\D/g,"");
-          if (!tel) { Swal.fire({icon:"info", title:"Paciente sem telefone"}); return; }
+          if (tel.length < 10) { Swal.fire({icon:"info", title:"Telefone inválido"}); return; }
           window.open(`https://wa.me/55${tel}`, "_blank");
         });
 
@@ -677,7 +781,7 @@
       }
     }
 
-    // Exames
+    // ======== EXAMES ========
     const formExames = document.getElementById("formExames");
     const limparExameBtn = document.getElementById("limparExame");
     const pacienteSelect = document.getElementById("pacienteSelect");
@@ -691,7 +795,6 @@
         pacienteSelect.appendChild(opt);
         return;
       }
-      // Alfabético
       pacs.sort((a,b)=> (a.nome||"").localeCompare(b.nome||""));
       pacs.forEach(p => {
         const opt = document.createElement("option");
@@ -709,6 +812,7 @@
       const pacs = encLoad(KEY_PAC, []);
       const current = pacs.find(pp => pp.id === Number(pacienteSelect.value));
       atualizarHeaderPaciente(current || null);
+      pacienteSelecionado = current || null;
     });
 
     formExames.addEventListener("submit", (e) => {
@@ -749,7 +853,7 @@
       formExames.reset();
     });
 
-    // Histórico
+    // ======== HISTÓRICO ========
     const buscaHistorico = document.getElementById("buscaHistorico");
     const listaHistorico = document.getElementById("listaHistorico");
     document.getElementById("ordenarRecente").addEventListener("click", () => { ordem = "desc"; carregarHistorico(); });
@@ -883,6 +987,7 @@
       document.getElementById("trigliceridios").value = ex.trigliceridios || "";
       document.getElementById("pressao").value = ex.pressao || "";
       document.getElementById("bpm").value = ex.bpm || "";
+      Swal.fire({ icon: "info", title: "Editando exame", text: "Altere os valores e clique em salvar." });
     }
 
     function removerExame(id) {
@@ -892,7 +997,6 @@
       carregarHistorico();
     }
 
-    // Apagar todo histórico
     document.getElementById("apagarHistorico").addEventListener("click", () => {
       Swal.fire({
         title: "Apagar todo histórico?",
@@ -902,12 +1006,13 @@
         if (res.isConfirmed) {
           localStorage.removeItem(KEY_EXA);
           carregarHistorico();
+          formExames.reset();
+          document.getElementById("exameId").value = "";
           Swal.fire("Apagado!", "Todo o histórico foi removido.", "success");
         }
       });
     });
 
-    // PDF
     document.getElementById("salvarPDF").addEventListener("click", () => {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF();
@@ -926,7 +1031,7 @@
       else {
         pacs.sort((a,b)=> (a.nome||"").localeCompare(b.nome||""));
         pacs.forEach((p, i) => {
-          doc.text(`${i+1}. ${p.nome || "--"} | Nasc.: ${p.nascimento || "--"} | Tel.: ${p.telefone || "--"} | Sangue: ${p.sangue || "--"}`, 14, y);
+          doc.text(`${i+1}. ${p.nome || "--"} | Nasc.: ${p.nascimento || "--"} | Tel.: ${p.telefone || "--"} | CPF: ${p.cpf || "--"} | Agente: ${p.agente || "--"} | Sangue: ${p.sangue || "--"}`, 14, y);
           y += 6; if (y > 270) { doc.addPage(); y = 20; }
         });
         y += 4;
@@ -943,18 +1048,474 @@
           grupo[pid].forEach((ex, idx) => {
             const dataFmt = new Date(ex.dataISO).toLocaleString("pt-BR");
             doc.text(`  ${idx+1}. ${dataFmt}`, 14, y); y += 6;
-            doc.text(`     Glicemia: ${ex.glicemia || "--"} | Colesterol: ${ex.colesterol || "--"} | Triglicerídeos: ${ex.trigliceridios || "--"}`, 14, y); y += 6;
-            doc.text(`     Pressão: ${ex.pressao || "--"} | BPM: ${ex.bpm || "--"}`, 14, y); y += 8;
+            doc.text(`     Glicemia: ${ex.glicemia || "--"} (${avaliarGlicemia(ex.glicemia).msg || ""}) | Colesterol: ${ex.colesterol || "--"} (${avaliarColesterol(ex.colesterol).msg || ""}) | Triglicerídeos: ${ex.trigliceridios || "--"} (${avaliarTrigliceridios(ex.trigliceridios).msg || ""})`, 14, y); y += 6;
+            doc.text(`     Pressão: ${ex.pressao || "--"} (${avaliarPressao(ex.pressao).msg || ""}) | BPM: ${ex.bpm || "--"} (${avaliarBPM(ex.bpm).msg || ""})`, 14, y); y += 8;
             if (y > 270) { doc.addPage(); y = 20; }
           });
           y += 4; if (y > 270) { doc.addPage(); y = 20; }
         });
       }
+
       doc.save("relatorio-saude.pdf");
       Swal.fire({ icon: 'success', title: 'PDF gerado!', text: 'Relatório salvo com sucesso.', timer: 1600, showConfirmButton: false });
     });
 
-    // Persistência de login
+    // ======== PROFISSIONAIS (AGENDA) ========
+    const agendaDataEl = document.getElementById("agendaData");
+    const btnHoje = document.getElementById("btnHoje");
+    const btnAgendaMedico = document.getElementById("btnAgendaMedico");
+    const btnAgendaEnfermeiro = document.getElementById("btnAgendaEnfermeiro");
+    const tabelaAgendaBody = document.querySelector("#tabelaAgenda tbody");
+    const vagasInfo = document.getElementById("vagasInfo");
+    const buscaAgenda = document.getElementById("buscaAgenda");
+
+    function formatISODateOnly(d) {
+      const pad = n => String(n).padStart(2, '0');
+      return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+    }
+    function formatDateBR(dateStr) {
+      const [y,m,d] = dateStr.split("-");
+      return `${d}/${m}/${y}`;
+    }
+    function isWeekday(dateStr) {
+      const d = new Date(dateStr + "T00:00:00");
+      const day = d.getDay(); // 0=Dom, 6=Sáb
+      return day >= 1 && day <= 5;
+    }
+    function initAgendaDefaults() {
+      if (!agendaDataEl.value) {
+        agendaDataEl.value = formatISODateOnly(new Date());
+      }
+      updateVagasInfo();
+    }
+    btnHoje.addEventListener("click", () => {
+      agendaDataEl.value = formatISODateOnly(new Date());
+      renderAgenda();
+    });
+    agendaDataEl.addEventListener("change", () => {
+      if (!agendaDataEl.value) return;
+      renderAgenda();
+    });
+    buscaAgenda.addEventListener("input", () => renderAgenda());
+
+    function getAgendaAll() { return encLoad(KEY_AGD, []); }
+    function getAgendaByDate(dateStr) {
+      const all = getAgendaAll();
+      return all.filter(a => a.data === dateStr);
+    }
+    function saveAgendaAll(list) { encSave(KEY_AGD, list); }
+
+    function updateVagasInfo() {
+      const data = agendaDataEl.value;
+      const items = getAgendaByDate(data);
+      const medicos = items.filter(i => i.tipo === "medico").length;
+      const enferms = items.filter(i => i.tipo === "enfermeiro").length;
+      vagasInfo.textContent = `Vagas em ${formatDateBR(data)}: Médico(a) ${medicos}/10 • Enfermeiro(a) ${enferms}/15`;
+    }
+
+    function solicitarMedicoNome() {
+      return Swal.fire({
+        title: "Escolha o médico",
+        input: "select",
+        inputOptions: { "Dra. Ana": "Dra. Ana", "Dr. Kaka": "Dr. Kaka" },
+        inputPlaceholder: "Selecione",
+        showCancelButton: true,
+        confirmButtonText: "Continuar"
+      });
+    }
+
+    function abrirAgendar(tipo) {
+      const data = agendaDataEl.value;
+      if (!data) { Swal.fire("Selecione a data", "Informe uma data para agendar.", "info"); return; }
+      if (!isWeekday(data)) { Swal.fire("Data inválida", "Escolha um dia útil (segunda a sexta).", "warning"); return; }
+
+      const items = getAgendaByDate(data);
+      const limite = (tipo === "medico") ? 10 : 15;
+      const atual = items.filter(i => i.tipo === tipo).length;
+      if (atual >= limite) {
+        Swal.fire("Limite atingido", `Todas as ${limite} vagas já foram preenchidas para ${tipo === "medico" ? "Médico(a)" : "Enfermeiro(a)"} em ${formatDateBR(data)}.`, "warning");
+        return;
+      }
+
+      if (pacienteSelecionado) {
+        if (tipo === "medico") {
+          solicitarMedicoNome().then(res => {
+            if (!res.isConfirmed || !res.value) return;
+            salvarAgendamentoComPaciente(tipo, res.value, pacienteSelecionado, data);
+          });
+        } else {
+          salvarAgendamentoComPaciente(tipo, "Enfermeiro(a)", pacienteSelecionado, data);
+        }
+        return;
+      }
+
+      if (tipo === "medico") {
+        solicitarMedicoNome().then(res => {
+          if (!res.isConfirmed || !res.value) return;
+          abrirFormularioAgendamento(tipo, res.value, data);
+        });
+      } else {
+        abrirFormularioAgendamento(tipo, "Enfermeiro(a)", data);
+      }
+    }
+
+    btnAgendaMedico.addEventListener("click", () => abrirAgendar("medico"));
+    btnAgendaEnfermeiro.addEventListener("click", () => abrirAgendar("enfermeiro"));
+
+    function abrirFormularioAgendamento(tipo, profissional, data) {
+      Swal.fire({
+        title: `Agendar - ${profissional}`,
+        html: `
+          <input id="ag-nome" class="swal2-input" placeholder="Nome do paciente">
+          <input id="ag-endereco" class="swal2-input" placeholder="Endereço">
+          <input id="ag-cpf" class="swal2-input" placeholder="CPF">
+          <input id="ag-telefone" class="swal2-input" placeholder="Telefone">
+          <input id="ag-agente" class="swal2-input" placeholder="Agente de Saúde">
+        `,
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "Salvar",
+        preConfirm: () => {
+          const nome = document.getElementById("ag-nome").value.trim();
+          if (!nome) { Swal.showValidationMessage("Informe o nome do paciente"); return false; }
+          return {
+            id: Date.now(),
+            tipo,
+            profissional,
+            data,
+            criadoISO: new Date().toISOString(),
+            nome,
+            endereco: document.getElementById("ag-endereco").value.trim(),
+            cpf: document.getElementById("ag-cpf").value.trim(),
+            telefone: document.getElementById("ag-telefone").value.trim(),
+            agente: document.getElementById("ag-agente").value.trim()
+          };
+        }
+      }).then(res => {
+        if (!res.isConfirmed) return;
+        const all = getAgendaAll();
+        all.push(res.value);
+        saveAgendaAll(all);
+        Swal.fire({ icon:"success", title:"Consulta agendada!", timer:1200, showConfirmButton:false });
+        renderAgenda();
+      });
+    }
+
+    function salvarAgendamentoComPaciente(tipo, profissional, paciente, data) {
+      const all = getAgendaAll();
+      const novo = {
+        id: Date.now(),
+        tipo,
+        profissional,
+        data,
+        criadoISO: new Date().toISOString(),
+        nome: paciente.nome,
+        endereco: paciente.endereco || "",
+        cpf: paciente.cpf || "",
+        telefone: paciente.telefone || "",
+        agente: paciente.agente || ""
+      };
+      all.push(novo);
+      saveAgendaAll(all);
+      Swal.fire({ icon:"success", title:"Consulta agendada!", timer:1000, showConfirmButton:false });
+      renderAgenda();
+    }
+
+    function renderAgenda() {
+      const data = agendaDataEl.value;
+      let items = getAgendaByDate(data).sort((a,b) => new Date(a.criadoISO) - new Date(b.criadoISO));
+      const termo = (buscaAgenda.value||"").toLowerCase().trim();
+      if (termo) {
+        items = items.filter(c =>
+          (c.nome||"").toLowerCase().includes(termo) ||
+          (c.cpf||"").toLowerCase().includes(termo) ||
+          (c.agente||"").toLowerCase().includes(termo)
+        );
+      }
+
+      const tbody = document.querySelector("#tabelaAgenda tbody");
+      tbody.innerHTML = "";
+      updateVagasInfo();
+
+      if (items.length === 0) {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td colspan="9" class="muted"><i class="fa-regular fa-folder-open"></i> Nenhuma consulta para ${formatDateBR(data)}.</td>`;
+        tbody.appendChild(tr);
+        return;
+      }
+
+      items.forEach((c, idx) => {
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td>${idx+1}</td>
+          <td>${formatDateBR(c.data)}</td>
+          <td>${c.profissional}</td>
+          <td>${c.nome}</td>
+          <td>${c.endereco || "--"}</td>
+          <td>${c.cpf || "--"}</td>
+          <td>${c.telefone || "--"}</td>
+          <td>${c.agente || "--"}</td>
+          <td>
+            <button class="btn secondary" title="Editar" data-act="edit"><i class="fa-solid fa-pen"></i></button>
+            <button class="btn btn-remove" title="Remover" data-act="del"><i class="fa-solid fa-trash"></i></button>
+          </td>
+        `;
+        tr.querySelector('[data-act="edit"]').addEventListener("click", () => editarConsulta(c.id));
+        tr.querySelector('[data-act="del"]').addEventListener("click", () => removerConsulta(c.id));
+        tbody.appendChild(tr);
+      });
+    }
+
+    function editarConsulta(id) {
+      const all = getAgendaAll();
+      const c = all.find(x => x.id === id);
+      if (!c) return;
+      Swal.fire({
+        title: `Editar - ${c.profissional}`,
+        html: `
+          <input id="ag-nome" class="swal2-input" value="${c.nome}">
+          <input id="ag-endereco" class="swal2-input" value="${c.endereco || ""}">
+          <input id="ag-cpf" class="swal2-input" value="${c.cpf || ""}">
+          <input id="ag-telefone" class="swal2-input" value="${c.telefone || ""}">
+          <input id="ag-agente" class="swal2-input" value="${c.agente || ""}">
+          <input id="ag-data" type="date" class="swal2-input" value="${c.data}">
+        `,
+        showCancelButton: true,
+        confirmButtonText: "Salvar",
+        preConfirm: () => {
+          const nome = document.getElementById("ag-nome").value.trim();
+          if (!nome) { Swal.showValidationMessage("Informe o nome do paciente"); return false; }
+          c.nome = nome;
+          c.endereco = document.getElementById("ag-endereco").value.trim();
+          c.cpf = document.getElementById("ag-cpf").value.trim();
+          c.telefone = document.getElementById("ag-telefone").value.trim();
+          c.agente = document.getElementById("ag-agente").value.trim();
+          const novaData = document.getElementById("ag-data").value;
+          if (novaData) c.data = novaData;
+        }
+      }).then(res => {
+        if (!res.isConfirmed) return;
+        saveAgendaAll(all);
+        Swal.fire({ icon:"success", title:"Consulta atualizada!", timer:1000, showConfirmButton:false });
+        renderAgenda();
+      });
+    }
+
+    function removerConsulta(id) {
+      let all = getAgendaAll();
+      all = all.filter(c => c.id !== id);
+      saveAgendaAll(all);
+      renderAgenda();
+      Swal.fire({ icon:"success", title:"Consulta removida!", timer:1000, showConfirmButton:false });
+    }
+
+    document.getElementById("btnExportAgenda").addEventListener("click", () => {
+      const data = agendaDataEl.value || formatISODateOnly(new Date());
+      const items = getAgendaByDate(data).sort((a,b) => new Date(a.criadoISO) - new Date(b.criadoISO));
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFillColor(37,99,235);
+      doc.rect(0,0,210,20,"F");
+      doc.setFontSize(16);
+      doc.setTextColor(255,255,255);
+      doc.text(`Agenda - ${formatDateBR(data)}`, 14, 14);
+      doc.setTextColor(0,0,0);
+      doc.setFontSize(11);
+      doc.text("Gerado em: " + new Date().toLocaleString("pt-BR"), 14, 28);
+
+      let y = 40;
+      const totalMed = items.filter(i => i.tipo==="medico").length;
+      const totalEnf = items.filter(i => i.tipo==="enfermeiro").length;
+      doc.text(`Total Médico(a): ${totalMed}/10`, 14, y); y+=6;
+      doc.text(`Total Enfermeiro(a): ${totalEnf}/15`, 14, y); y+=10;
+
+      if (items.length === 0) {
+        doc.text("Nenhuma consulta para a data.", 14, y);
+      } else {
+        items.forEach((c, i) => {
+          doc.setFontSize(12);
+          doc.text(`${i+1}. ${c.profissional} - ${c.nome}`, 14, y); y += 6;
+          doc.text(`End.: ${c.endereco || "--"} | CPF: ${c.cpf || "--"} | Tel.: ${c.telefone || "--"} | Agente: ${c.agente || "--"}`, 14, y); y += 10;
+          if (y > 270) { doc.addPage(); y = 20; }
+        });
+      }
+
+      // Linha de assinatura no final
+      y += 20; if (y > 280) { doc.addPage(); y = 20; }
+      doc.line(14, y, 100, y); y += 6;
+      doc.text("Assinatura do profissional", 14, y);
+
+      doc.save(`agenda_${formatDateBR(data)}.pdf`);
+      Swal.fire({ icon:"success", title:"PDF da agenda gerado!", timer:1200, showConfirmButton:false });
+    });
+
+    document.getElementById("btnLimparAgenda").addEventListener("click", () => {
+      const data = agendaDataEl.value || formatISODateOnly(new Date());
+      Swal.fire({
+        title: `Limpar agenda de ${formatDateBR(data)}?`,
+        text: "Essa ação remove todas as consultas dessa data.",
+        icon: "warning", showCancelButton:true, confirmButtonText:"Apagar", cancelButtonText:"Cancelar"
+      }).then(res => {
+        if (!res.isConfirmed) return;
+        const all = getAgendaAll();
+        const keep = all.filter(c => c.data !== data);
+        saveAgendaAll(keep);
+        renderAgenda();
+        Swal.fire({ icon:"success", title:"Agenda do dia apagada!", timer:1000, showConfirmButton:false });
+      });
+    });
+
+    // ======== EXAMES LABORATORIAIS (POP-UP + PDF) ========
+document.getElementById("btnExamesLab").addEventListener("click", () => {
+  Swal.fire({
+    title: "Exames laboratoriais",
+    width: 800, // pop-up mais largo
+    html: `
+      <div style="text-align:left; max-height:420px; overflow-y:auto;">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:20px;">
+          <!-- Coluna Esquerda -->
+          <div class="exams-list">
+            <label><input type="checkbox" id="exa1"> Parasitológico de Fezes</label>
+            <label><input type="checkbox" id="exa2"> Sumário de Urina</label>
+            <label><input type="checkbox" id="exa3"> Glicosúria</label>
+            <label><input type="checkbox" id="exa4"> Teste de Gravidez</label>
+            <label><input type="checkbox" id="exa5"> Hemograma Completo</label>
+            <label><input type="checkbox" id="exa6"> Tipagem Sanguínea</label>
+            <label><input type="checkbox" id="exa7"> Prova do Laço</label>
+            <label><input type="checkbox" id="exa8"> Tempo de Sangria</label>
+            <label><input type="checkbox" id="exa9"> Tempo de Coagulação</label>
+            <label><input type="checkbox" id="exa10"> Glicemia em Jejum</label>
+            <label><input type="checkbox" id="exa11"> Glicemia pós Prandial</label>
+            <label><input type="checkbox" id="exa12"> Colesterol Total</label>
+            <label><input type="checkbox" id="exa13"> Sorologia p/ Lues</label>
+            <label><input type="checkbox" id="exa14"> Uréia</label>
+            <label><input type="checkbox" id="exa15"> Creatinina</label>
+            <label><input type="checkbox" id="exa16"> Ácido Úrico</label>
+            <label><input type="checkbox" id="exa17"> Pesquisa de BAAR</label>
+            <label><input type="checkbox" id="exa18"> Bilirrubina Total</label>
+            <label><input type="checkbox" id="exa19"> TGP TGO</label>
+            <label><input type="checkbox" id="exa20"> Secc. Vaginal</label>
+            <label><input type="checkbox" id="exa21"> Lipídios Totais</label>
+          </div>
+
+          <!-- Coluna Direita -->
+          <div class="exams-list">
+            <label><input type="checkbox" id="exa22"> Triglicerídeos</label>
+            <label><input type="checkbox" id="exa23"> Látex</label>
+            <label><input type="checkbox" id="exa24"> Aslo</label>
+            <label><input type="checkbox" id="exa25"> Mucoproteína</label>
+            <label><input type="checkbox" id="exa26"> VHS</label>
+            <label><input type="checkbox" id="exa27"> PCR</label>
+            <label><input type="checkbox" id="exa28"> Outros</label>
+          </div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label for="obsExames"><strong>Observações / Especificar:</strong></label>
+          <textarea id="obsExames" rows="3" style="width:100%;"></textarea>
+        </div>
+      </div>
+    `,
+    showCancelButton: true,
+    confirmButtonText: "Salvar em PDF",
+    preConfirm: () => {
+      const labels = [
+        "Parasitológico de Fezes","Sumário de Urina","Glicosúria","Teste de Gravidez","Hemograma Completo",
+        "Tipagem Sanguínea","Prova do Laço","Tempo de Sangria","Tempo de Coagulação","Glicemia em Jejum",
+        "Glicemia pós Prandial","Colesterol Total","Sorologia p/ Lues","Uréia","Creatinina","Ácido Úrico",
+        "Pesquisa de BAAR","Bilirrubina Total","TGP TGO","Secc. Vaginal","Lipídios Totais",
+        "Triglicerídeos","Látex","Aslo","Mucoproteína","VHS","PCR","Outros"
+      ];
+      const exames = [];
+      for (let i=1;i<=28;i++) {
+        const el = document.getElementById("exa"+i);
+        if (el && el.checked) exames.push(labels[i-1]);
+      }
+      const obs = (document.getElementById("obsExames").value || "").trim();
+      if (exames.length===0 && !obs) {
+        Swal.showValidationMessage("Selecione pelo menos um exame ou informe observações.");
+        return false;
+      }
+      return { exames, obs };
+    }
+  }).then(res => {
+    if (!res.isConfirmed) return;
+    solicitarMedicoNome().then(med => {
+      const medicoNome = med.isConfirmed && med.value ? med.value : "Médico(a)";
+      gerarPDFExames(res.value.exames, res.value.obs, medicoNome);
+    });
+  });
+});
+
+    function gerarPDFExames(exames, observacoes, medicoNome="Médico(a)") {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      // Cabeçalho moderno
+      doc.setFillColor(37,99,235);
+      doc.rect(0,0,210,20,"F");
+      doc.setFontSize(16);
+      doc.setTextColor(255,255,255);
+      doc.text("Solicitação de Exames Laboratoriais", 14, 14);
+
+      // Informações do paciente selecionado
+      doc.setTextColor(0,0,0);
+      doc.setFontSize(11);
+      const hoje = new Date();
+      doc.text("Data: " + hoje.toLocaleDateString("pt-BR"), 14, 28);
+
+      let y = 36;
+      if (pacienteSelecionado) {
+        doc.setFontSize(12);
+        doc.text(`Nome: ${pacienteSelecionado.nome || "--"}`, 14, y); y+=6;
+        doc.text(`Nascimento: ${pacienteSelecionado.nascimento || "--"} | CPF: ${pacienteSelecionado.cpf || "--"}`, 14, y); y+=6;
+        doc.text(`Endereço: ${pacienteSelecionado.endereco || "--"}`, 14, y); y+=6;
+        doc.text(`Telefone: ${pacienteSelecionado.telefone || "--"} | Agente: ${pacienteSelecionado.agente || "--"}`, 14, y); y+=10;
+      } else {
+        doc.setFontSize(12);
+        doc.text(`Paciente: --`, 14, y); y+=10;
+      }
+
+      // Médico responsável
+      doc.setFontSize(12);
+      doc.text(`Médico responsável: ${medicoNome}`, 14, y); y+=10;
+
+      // Lista de exames
+      doc.setFontSize(13);
+      doc.text("Exames solicitados:", 14, y); y+=8;
+      doc.setFontSize(12);
+      if (exames.length === 0) {
+        doc.text("Nenhum exame selecionado.", 20, y); y += 8;
+      } else {
+        exames.forEach((ex, i) => {
+          doc.text(`${i+1}. ${ex}`, 20, y);
+          y+=8;
+          if (y > 270) { doc.addPage(); y = 20; }
+        });
+      }
+
+      // Observações
+      if (observacoes) {
+        y+=6;
+        doc.setFontSize(13);
+        doc.text("Observações:", 14, y); y+=8;
+        doc.setFontSize(12);
+        const lines = doc.splitTextToSize(observacoes, 180);
+        doc.text(lines, 14, y);
+        y += lines.length * 6;
+      }
+
+      // Linha de assinatura
+      y+=20; if (y > 280) { doc.addPage(); y = 20; }
+      doc.line(14, y, 100, y); y+=6;
+      doc.text("Assinatura do médico", 14, y);
+
+      doc.save("exames-laboratoriais.pdf");
+      Swal.fire({ icon:"success", title:"PDF gerado!", timer:1500, showConfirmButton:false });
+    }
+
+    // ======== PERSISTÊNCIA LOGIN ========
     window.addEventListener("DOMContentLoaded", () => {
       const logado = localStorage.getItem(KEY_LOGGED) === "true";
       const senhaSalva = localStorage.getItem(KEY_PASS);
@@ -966,6 +1527,8 @@
         renderListaPacientes();
         carregarPacientesSelect();
         carregarHistorico();
+        initAgendaDefaults();
+        renderAgenda();
       } else {
         document.getElementById("loginScreen").style.display = "flex";
         document.getElementById("appRoot").style.display = "none";
@@ -975,5 +1538,3 @@
   </script>
 </body>
 </html>
-
-<!-- Codigo de Carlos de Freitas Rocha Carvalho. ACE de Itinga do Maranhão. Vulgo KAKA kkkkk-->
