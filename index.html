@@ -59,29 +59,26 @@
     .btn.edit{background:#f39c12;}
     .btn.delete{background:var(--red);}
 
-    /* Formulário responsivo */
+    /* Formulário responsivo (somente pressão e data) */
     .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin-bottom:16px;}
     @media(max-width:768px){ .grid{ grid-template-columns:1fr; } }
     .field{display:flex; flex-direction:column; gap:6px;}
     label{font-weight:600; font-size:14px;}
     input{
       padding:10px; border-radius:8px; border:1px solid #ccc; font-size:15px;
-      transition:border-color .2s, box-shadow .2s;
+      transition:border-color .2s, box-shadow .2s; text-align: center;
     }
     input:focus{ outline:none; border-color:var(--primary); box-shadow:0 0 0 3px rgba(21,101,192,0.12); }
 
     /* Tabela */
     .table-wrap{ overflow-x:auto; }
-    table{width:100%; border-collapse:collapse; font-size:15px; ;}
-    th,td{border:1px solid #ddd; padding:5px; text-align:center;}
+    table{width:100%; border-collapse:collapse; font-size:15px;}
+    th,td{border:1px solid #ddd; padding:6px 8px; text-align:center;}
     th{background:var(--primary); color:#fff;}
     tr:nth-child(even){background:#f5f8fe;}
     .pressao.normal{color:var(--blue); font-weight:bold;}
     .pressao.medio{color:var(--yellow); font-weight:bold;}
     .pressao.alto{color:var(--red); font-weight:bold;}
-
-    /* Footer */
-    
 
     /* Botão flutuante */
     .fab{
@@ -104,9 +101,7 @@
       margin:4px 0 12px 0; color:var(--primary);
       display:flex; align-items:center; gap:8px;
     }
-    .sidebar .btn{
-      width:100%; justify-content:flex-start;
-    }
+    .sidebar .btn{ width:100%; justify-content:flex-start; }
     .sidebar .save{background:var(--primary);}
     .sidebar .pdf{background:#607d8b;}
     .sidebar .clear{background:var(--red);}
@@ -120,6 +115,18 @@
       opacity:0; pointer-events:none; transition:opacity .2s; z-index:1050;
     }
     .overlay.show{ opacity:1; pointer-events:auto; }
+
+    /* Footer */
+    .footer{
+      text-align: center;
+      margin-top:30px;
+      background: linear-gradient(135deg, #1565c0, #0d47a1);
+      color:#fff;
+      padding:20px 10px;
+      border-radius:12px;
+      box-shadow:0 -3px 10px rgba(0,0,0,0.2);
+    }
+    .footer-content p{ margin:6px 0; font-size:14px; }
   </style>
 </head>
 <body>
@@ -136,16 +143,8 @@
       </div>
     </div>
 
-    <!-- Formulário -->
+    <!-- Formulário (somente pressão e data) -->
     <div class="grid">
-      <div class="field">
-        <label for="nome"><i class="fa-solid fa-user"></i> Nome</label>
-        <input id="nome" type="text" placeholder="Ex.: Maria Souza" required />
-      </div>
-      <div class="field">
-        <label for="idade"><i class="fa-solid fa-cake-candles"></i> Idade</label>
-        <input id="idade" type="number" min="0" placeholder="Ex.: 54" required />
-      </div>
       <div class="field">
         <label for="pressao"><i class="fa-solid fa-heart"></i> Pressão</label>
         <input id="pressao" type="text" placeholder="Ex.: 120/80" maxlength="7" required />
@@ -175,8 +174,10 @@
     </div>
 
     <div class="footer">
-      <div><i class="fa-solid fa-shield-heart"></i> Uso pessoal</div>
-      
+      <div class="footer-content">
+        <p>🌐 Site criado por: <strong>Carlos de Freitas Rocha (ACE)</strong></p>
+        <p>📅 Criado em <span id="ano"></span> • 📍 Itinga do Maranhão - MA, Brasil</p>
+      </div>
     </div>
   </div>
 
@@ -195,311 +196,351 @@
   <!-- Overlay -->
   <div class="overlay" id="overlay"></div>
 
-  <script>
-    // Referências
-    const tbody = document.getElementById('tbody');
-    const cardBody = document.getElementById('cardBody');
-    const fab = document.getElementById('fab');
-    const sidebar = document.getElementById('sidebar');
-    const overlay = document.getElementById('overlay');
+<script>
+  // Estado
+  let registros = JSON.parse(localStorage.getItem('registros_pressao')) || [];
+  let paciente = JSON.parse(localStorage.getItem('paciente')) || null;
+  let editIndex = null;
 
-    // Estado
-    let registros = JSON.parse(localStorage.getItem('registros_pressao')) || [];
-    let paciente = JSON.parse(localStorage.getItem('paciente')) || null;
-    let editIndex = null;
+  // Referências
+  const tbody = document.getElementById('tbody');
+  const cardBody = document.getElementById('cardBody');
+  const fab = document.getElementById('fab');
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('overlay');
 
-    // Utils
-    function salvarRegistros(){ localStorage.setItem('registros_pressao', JSON.stringify(registros)); }
-    function salvarPacienteLocal(){ localStorage.setItem('paciente', JSON.stringify(paciente)); }
-    function formatarDataISOparaBR(iso){ const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
-    function formatarBRparaISO(br){ const [d,m,a] = br.split('/'); return `${a}-${m}-${d}`; }
-    function classificarPressao(valor){
-      const [sis, dia] = valor.split('/').map(Number);
-      if (sis < 130 && dia < 85) return 'normal';
-      if ((sis >= 130 && sis <= 139) || (dia >= 85 && dia <= 89)) return 'medio';
-      return 'alto';
-    }
+  // Utils
+  function salvarRegistros(){ localStorage.setItem('registros_pressao', JSON.stringify(registros)); }
+  function salvarPacienteLocal(){ localStorage.setItem('paciente', JSON.stringify(paciente)); }
+  function formatarDataISOparaBR(iso){ if(!iso) return ''; const [a,m,d] = iso.split('-'); return `${d}/${m}/${a}`; }
+  function formatarBRparaISO(br){ if(!br) return ''; const [d,m,a] = br.split('/'); return `${a}-${m}-${d}`; }
+  function classificarPressao(valor){
+    const [sis, dia] = valor.split('/').map(Number);
+    if (sis < 130 && dia < 85) return 'normal';
+    if ((sis >= 130 && sis <= 139) || (dia >= 85 && dia <= 89)) return 'medio';
+    return 'alto';
+  }
+  function ordenarPorDataDesc(arr){
+    return arr.slice().sort((a,b) => new Date(formatarBRparaISO(b.data)) - new Date(formatarBRparaISO(a.data)));
+  }
 
-    // Render tabela
-    function renderTabela(){
-      tbody.innerHTML = '';
-      registros.forEach((item, index) => {
-        const classe = classificarPressao(item.pressao);
-        const tr = document.createElement('tr');
-        tr.innerHTML = `
-          <td class="pressao ${classe}">${item.pressao}</td>
-          <td>${item.data}</td>
-          <td>
-            <button class="btn edit" title="Editar" onclick="editarRegistro(${index})">
-              <i class="fa-solid fa-pen"></i>
-            </button>
-            <button class="btn delete" title="Apagar" onclick="apagarRegistro(${index})">
-              <i class="fa-solid fa-trash"></i>
-            </button>
-          </td>
-        `;
-        tbody.appendChild(tr);
-      });
-    }
-
-    // Render card paciente
-    function renderCardPaciente(){
-      if (!paciente){
-        cardBody.innerHTML = '<span style="color:#888">Nenhum paciente salvo.</span>';
-        return;
-      }
-      cardBody.innerHTML = `
-        <div><i class="fa-solid fa-user"></i> <strong>${paciente.nome}</strong></div>
-        <div><i class="fa-solid fa-cake-candles"></i> ${paciente.idade} anos</div>
+  // Render tabela
+  function renderTabela(){
+    tbody.innerHTML = '';
+    const lista = ordenarPorDataDesc(registros);
+    lista.forEach((item, index) => {
+      const classe = classificarPressao(item.pressao);
+      const tr = document.createElement('tr');
+      tr.innerHTML = `
+        <td class="pressao ${classe}">${item.pressao}</td>
+        <td>${item.data}</td>
+        <td>
+          <button class="btn edit" title="Editar" onclick="editarRegistro(${index})">
+            <i class="fa-solid fa-pen"></i>
+          </button>
+          <button class="btn delete" title="Apagar" onclick="apagarRegistro(${index})">
+            <i class="fa-solid fa-trash"></i>
+          </button>
+        </td>
       `;
-    }
+      tbody.appendChild(tr);
+    });
+  }
 
-    // Editar e apagar registro
-    window.editarRegistro = function(index){
-      const item = registros[index];
-      document.getElementById('pressao').value = item.pressao;
-      document.getElementById('data').value = formatarBRparaISO(item.data);
-      editIndex = index;
-      Swal.fire({ icon:'info', title:'Edição', text:'Você está editando este registro.' });
+  // Render card paciente
+  function renderCardPaciente(){
+    if (!paciente){
+      cardBody.innerHTML = '<span style="color:#888">Nenhum paciente salvo.</span>';
+      return;
     }
+    cardBody.innerHTML = `
+      <div><i class="fa-solid fa-user"></i> <strong>${paciente.nome}</strong></div>
+      <div><i class="fa-solid fa-cake-candles"></i> ${paciente.idade} anos</div>
+      <div><i class="fa-solid fa-droplet"></i> Tipo sanguíneo: ${paciente.tipo || '-'}</div>
+    `;
+  }
 
-    window.apagarRegistro = function(index){
-      Swal.fire({
-        title: 'Tem certeza?',
-        text: 'Esse registro será apagado.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Sim, apagar',
-        cancelButtonText: 'Cancelar'
-      }).then(res => {
-        if (res.isConfirmed){
-          registros.splice(index,1);
-          salvarRegistros();
-          renderTabela();
-          Swal.fire({ icon:'success', title:'Apagado', text:'Registro removido com sucesso.' });
+  // Popup SweetAlert para cadastrar/editar paciente com seletor
+  async function abrirPopupPaciente(dados = {}){
+    const { nome = '', idade = '', tipo = '' } = dados;
+    const { value: formValues } = await Swal.fire({
+      title: 'Dados do paciente',
+      html: `
+        <div style="text-align:left; display:grid; gap:10px;">
+          <label><strong>Nome</strong><br/>
+            <input id="swal_nome" class="swal2-input" placeholder="Ex.: Maria Souza"  style="width:90%" value="${nome}">
+          </label>
+          <label><strong>Idade</strong><br/>
+            <input id="swal_idade" type="number" min="0" class="swal2-input" placeholder="Ex.: 54" style="width:90%" value="${idade}">
+          </label>
+          <label><strong>Tipo sanguíneo</strong><br/>
+            <select id="swal_tipo" class="swal2-select" style="width:30%; padding:10px; border-radius:8px; border:1px solid #ccc;">
+              <option value="">Selecione</option>
+              <option value="A+" ${tipo==='A+'?'selected':''}>A+</option>
+              <option value="A-" ${tipo==='A-'?'selected':''}>A-</option>
+              <option value="B+" ${tipo==='B+'?'selected':''}>B+</option>
+              <option value="B-" ${tipo==='B-'?'selected':''}>B-</option>
+              <option value="AB+" ${tipo==='AB+'?'selected':''}>AB+</option>
+              <option value="AB-" ${tipo==='AB-'?'selected':''}>AB-</option>
+              <option value="O+" ${tipo==='O+'?'selected':''}>O+</option>
+              <option value="O-" ${tipo==='O-'?'selected':''}>O-</option>
+            </select>
+          </label>
+        </div>
+      `,
+      focusConfirm: false,
+      showCancelButton: true,
+      confirmButtonText: 'Salvar paciente',
+      cancelButtonText: 'Cancelar',
+      preConfirm: () => {
+        const nome = document.getElementById('swal_nome').value.trim();
+        const idade = document.getElementById('swal_idade').value.trim();
+        const tipo = document.getElementById('swal_tipo').value;
+
+        if (!nome || !idade){
+          Swal.showValidationMessage('Informe nome e idade.');
+          return false;
         }
-      });
-    }
-
-    // Adicionar/Atualizar registro
-    document.getElementById('btnAdd').addEventListener('click', (e) => {
-      e.preventDefault();
-      const pressao = document.getElementById('pressao').value.trim();
-      const dataISO = document.getElementById('data').value;
-
-      if (!pressao || !dataISO){
-        Swal.fire({ icon:'warning', title:'Campos obrigatórios', text:'Informe pressão e data.' });
-        return;
-      }
-      if (!/^\d{2,3}\/\d{2}$/.test(pressao)){
-        Swal.fire({ icon:'error', title:'Formato inválido', text:'Use o formato 120/80.' });
-        return;
-      }
-
-      const novo = { pressao, data: formatarDataISOparaBR(dataISO) };
-      if (editIndex === null){
-        registros.push(novo);
-        Swal.fire({ icon:'success', title:'Adicionado', text:'Registro salvo com sucesso.' });
-      } else {
-        registros[editIndex] = novo;
-        editIndex = null;
-        Swal.fire({ icon:'info', title:'Atualizado', text:'Registro atualizado.' });
-      }
-      salvarRegistros();
-      renderTabela();
-      document.getElementById('pressao').value = '';
-      document.getElementById('data').value = '';
-    });
-
-    // Salvar paciente (menu lateral)
-    document.getElementById('btnSalvarPaciente').addEventListener('click', () => {
-      const nome = document.getElementById('nome').value.trim();
-      const idade = document.getElementById('idade').value.trim();
-
-      if (!nome || !idade){
-        Swal.fire({ icon:'warning', title:'Campos obrigatórios', text:'Informe nome e idade do paciente.' });
-        return;
-      }
-      paciente = { nome, idade: Number(idade) };
-      salvarPacienteLocal();
-      renderCardPaciente();
-      Swal.fire({ icon:'success', title:'Paciente salvo', text:'Dados armazenados no dispositivo.' });
-      fecharMenu();
-    });
-
-    // Editar/Apagar paciente do card
-    document.getElementById('btnEditarPaciente').addEventListener('click', () => {
-      if (!paciente){
-        Swal.fire({ icon:'info', title:'Sem paciente', text:'Salve o paciente primeiro.' });
-        return;
-      }
-      document.getElementById('nome').value = paciente.nome;
-      document.getElementById('idade').value = paciente.idade;
-      Swal.fire({ icon:'info', title:'Edição', text:'Edite no formulário e clique em "Salvar paciente" no menu.' });
-    });
-
-    document.getElementById('btnApagarPaciente').addEventListener('click', () => {
-      if (!paciente){
-        Swal.fire({ icon:'info', title:'Sem paciente', text:'Nada para apagar.' });
-        return;
-      }
-      Swal.fire({
-        title:'Apagar paciente?',
-        text:'Isso removerá os dados do paciente salvo.',
-        icon:'warning',
-        showCancelButton:true,
-        confirmButtonText:'Apagar',
-        cancelButtonText:'Cancelar'
-      }).then(res => {
-        if (res.isConfirmed){
-          paciente = null;
-          salvarPacienteLocal();
-          renderCardPaciente();
-          Swal.fire({ icon:'success', title:'Removido', text:'Paciente apagado.' });
+        const iNum = Number(idade);
+        if (isNaN(iNum) || iNum < 0 || iNum > 120){
+          Swal.showValidationMessage('Idade inválida. Use um valor entre 0 e 120.');
+          return false;
         }
-      });
-    });
-
-    // Exportar PDF (menu lateral)
-    document.getElementById('btnPDF').addEventListener('click', () => {
-      if (registros.length === 0){
-        Swal.fire({ icon:'info', title:'Sem registros', text:'Adicione registros antes de exportar.' });
-        return;
+        return { nome, idade: iNum, tipo: tipo || '' };
       }
-      const { jsPDF } = window.jspdf;
-      const doc = new jsPDF();
-
-      // Cabeçalho
-      doc.setFontSize(18);
-      doc.text('Relatório de Pressão Arterial', 105, 18, { align: 'center' });
-
-      doc.setFontSize(12);
-      const linhaPaciente = paciente
-        ? `Paciente: ${paciente.nome} • Idade: ${paciente.idade} anos`
-        : 'Paciente não cadastrado';
-      doc.text(linhaPaciente, 105, 26, { align: 'center' });
-
-      // Tabela
-      const head = [['Pressão', 'Data']];
-      const body = registros.map(r => [r.pressao, r.data]);
-
-      doc.autoTable({
-        head,
-        body,
-        startY: 32,
-        styles: { halign:'center', fontSize:12 },
-        headStyles: { fillColor: [21,101,192], textColor:255 },
-        alternateRowStyles: { fillColor: [245,248,254] },
-        margin: { left: 18, right: 18 }
-      });
-
-      // Rodapé
-      const dataAtual = new Date();
-      const rodape = `Gerado em ${String(dataAtual.getDate()).padStart(2,'0')}/${String(dataAtual.getMonth()+1).padStart(2,'0')}/${dataAtual.getFullYear()}`;
-      doc.setFontSize(10);
-      doc.text(rodape, 105, doc.internal.pageSize.getHeight() - 10, { align:'center' });
-
-      doc.save('pressao_arterial.pdf');
-      fecharMenu();
     });
+    return formValues || null;
+  }
 
-    // Apagar toda a tabela (menu lateral)
-    document.getElementById('btnClear').addEventListener('click', () => {
-      if (registros.length === 0){
-        Swal.fire({ icon:'info', title:'Tabela vazia', text:'Não há registros para apagar.' });
-        return;
+  // Editar e apagar registro
+  window.editarRegistro = function(index){
+    const item = registros[index];
+    document.getElementById('pressao').value = item.pressao;
+    document.getElementById('data').value = formatarBRparaISO(item.data);
+    editIndex = index;
+    Swal.fire({ icon:'info', title:'Edição', text:'Você está editando este registro.' });
+  }
+
+  window.apagarRegistro = function(index){
+    Swal.fire({
+      title: 'Tem certeza?',
+      text: 'Esse registro será apagado.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sim, apagar',
+      cancelButtonText: 'Cancelar'
+    }).then(res => {
+      if (res.isConfirmed){
+        registros.splice(index,1);
+        salvarRegistros();
+        renderTabela();
+        Swal.fire({ icon:'success', title:'Apagado', text:'Registro removido com sucesso.' });
       }
-      Swal.fire({
-        title: 'Apagar todos os registros?',
-        text: 'Essa ação não pode ser desfeita.',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonColor: '#e74c3c', // vermelho
-        confirmButtonText: 'Apagar tudo',
-        cancelButtonText: 'Cancelar'
-      }).then(res => {
-        if (res.isConfirmed){
-          registros = [];
-          salvarRegistros();
-          renderTabela();
-          Swal.fire({ icon:'success', title:'Tabela apagada', text:'Todos os registros foram removidos.' });
-          fecharMenu();
-        }
-      });
+    });
+  }
+
+  // Adicionar/Atualizar registro
+  document.getElementById('btnAdd').addEventListener('click', (e) => {
+    e.preventDefault();
+    const pressao = document.getElementById('pressao').value.trim();
+    const dataISO = document.getElementById('data').value;
+
+    if (!pressao || !dataISO){
+      Swal.fire({ icon:'warning', title:'Campos obrigatórios', text:'Informe pressão e data.' });
+      return;
+    }
+    if (!/^\d{2,3}\/\d{2}$/.test(pressao)){
+      Swal.fire({ icon:'error', title:'Formato inválido', text:'Use o formato 120/80.' });
+      return;
+    }
+    // Limites razoáveis
+    const [sis, dia] = pressao.split('/').map(Number);
+    if (sis < 50 || sis > 250 || dia < 30 || dia > 150){
+      Swal.fire({ icon:'error', title:'Valores inválidos', text:'Verifique os valores de sistólica/diastólica.' });
+      return;
+    }
+
+    const novo = { pressao, data: formatarDataISOparaBR(dataISO) };
+    if (editIndex === null){
+      registros.push(novo);
+      Swal.fire({ icon:'success', title:'Adicionado', text:'Registro salvo com sucesso.' });
+    } else {
+      registros[editIndex] = novo;
+      editIndex = null;
+      Swal.fire({ icon:'info', title:'Atualizado', text:'Registro atualizado.' });
+    }
+    salvarRegistros();
+    renderTabela();
+    document.getElementById('pressao').value = '';
+    document.getElementById('data').value = '';
+  });
+
+  // Salvar paciente (menu lateral) -> abre popup e fecha menu
+  document.getElementById('btnSalvarPaciente').addEventListener('click', async () => {
+    fecharMenu(); // fechar imediatamente após clique
+    const valores = await abrirPopupPaciente(paciente || {});
+    if (!valores) return;
+    paciente = valores;
+    salvarPacienteLocal();
+    renderCardPaciente();
+    Swal.fire({ icon:'success', title:'Paciente salvo', text:'Dados armazenados no dispositivo.' });
+  });
+
+  // Editar paciente a partir do card -> abre popup preenchido
+  document.getElementById('btnEditarPaciente').addEventListener('click', async () => {
+    if (!paciente){
+      Swal.fire({ icon:'info', title:'Sem paciente', text:'Salve o paciente primeiro.' });
+      return;
+    }
+    const valores = await abrirPopupPaciente(paciente);
+    if (!valores) return;
+    paciente = valores;
+    salvarPacienteLocal();
+    renderCardPaciente();
+    Swal.fire({ icon:'success', title:'Paciente atualizado', text:'Dados atualizados com sucesso.' });
+  });
+
+  // Apagar paciente
+  document.getElementById('btnApagarPaciente').addEventListener('click', () => {
+    if (!paciente){
+      Swal.fire({ icon:'info', title:'Sem paciente', text:'Nada para apagar.' });
+      return;
+    }
+    Swal.fire({
+      title:'Apagar paciente?',
+      text:'Isso removerá os dados do paciente salvo.',
+      icon:'warning',
+      showCancelButton:true,
+      confirmButtonText:'Apagar',
+      cancelButtonText:'Cancelar'
+    }).then(res => {
+      if (res.isConfirmed){
+        paciente = null;
+        salvarPacienteLocal();
+        renderCardPaciente();
+        Swal.fire({ icon:'success', title:'Removido', text:'Paciente apagado.' });
+      }
+    });
+  });
+
+  // Exportar PDF (menu lateral) -> fecha menu ao clicar
+  document.getElementById('btnPDF').addEventListener('click', () => {
+    fecharMenu(); // fechar imediatamente após clique
+    if (registros.length === 0){
+      Swal.fire({ icon:'info', title:'Sem registros', text:'Adicione registros antes de exportar.' });
+      return;
+    }
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF();
+
+    // Cabeçalho
+    doc.setFontSize(18);
+    doc.text('Relatório de Pressão Arterial', 105, 18, { align: 'center' });
+
+    doc.setFontSize(12);
+    const linhaPaciente = paciente
+      ? `Paciente: ${paciente.nome} • Idade: ${paciente.idade} • Tipo: ${paciente.tipo || '-'}`
+      : 'Paciente não cadastrado';
+    doc.text(linhaPaciente, 105, 26, { align: 'center' });
+
+    // Tabela
+    const head = [['Pressão', 'Data']];
+    const body = ordenarPorDataDesc(registros).map(r => [r.pressao, r.data]);
+
+    doc.autoTable({
+      head,
+      body,
+      startY: 32,
+      styles: { halign:'center', fontSize:12 },
+      headStyles: { fillColor: [21,101,192], textColor:255 },
+      alternateRowStyles: { fillColor: [245,248,254] },
+      margin: { left: 18, right: 18 }
     });
 
-    // Autoformatação do campo de pressão: 12080 => 120/80
-    document.getElementById('pressao').addEventListener('input', (e) => {
-      let v = e.target.value.replace(/\D/g,'');
-      if (v.length > 3){ v = v.slice(0,3) + '/' + v.slice(3,5); }
-      e.target.value = v;
+    // Rodapé
+    const dataAtual = new Date();
+    const rodape = `Gerado em ${String(dataAtual.getDate()).padStart(2,'0')}/${String(dataAtual.getMonth()+1).padStart(2,'0')}/${dataAtual.getFullYear()}`;
+    doc.setFontSize(10);
+    doc.text(rodape, 105, doc.internal.pageSize.getHeight() - 10, { align:'center' });
+
+    doc.save('pressao_arterial.pdf');
+  });
+
+  // Apagar toda a tabela (menu lateral) -> fecha menu ao clicar
+  document.getElementById('btnClear').addEventListener('click', () => {
+    fecharMenu(); // fechar imediatamente após clique
+    if (registros.length === 0){
+      Swal.fire({ icon:'info', title:'Tabela vazia', text:'Não há registros para apagar.' });
+      return;
+    }
+    Swal.fire({
+      title: 'Apagar todos os registros?',
+      text: 'Essa ação não pode ser desfeita.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#e74c3c',
+      confirmButtonText: 'Apagar tudo',
+      cancelButtonText: 'Cancelar'
+    }).then(res => {
+      if (res.isConfirmed){
+        registros = [];
+        salvarRegistros();
+        renderTabela();
+        Swal.fire({ icon:'success', title:'Tabela apagada', text:'Todos os registros foram removidos.' });
+      }
     });
+  });
 
-    // Menu lateral: abrir/fechar
-    function abrirMenu(){
-      sidebar.classList.add('show');
-      overlay.classList.add('show');
-    }
-    function fecharMenu(){
-      sidebar.classList.remove('show');
-      overlay.classList.remove('show');
-    }
-    fab.addEventListener('click', abrirMenu);
-    document.getElementById('btnClose').addEventListener('click', fecharMenu);
-    overlay.addEventListener('click', fecharMenu);
+  // Autoformatação do campo de pressão: 12080 => 120/80
+  document.getElementById('pressao').addEventListener('input', (e) => {
+    let v = e.target.value.replace(/\D/g,'');
+    if (v.length > 3){ v = v.slice(0,3) + '/' + v.slice(3,5); }
+    e.target.value = v;
+  });
 
-    // Inicialização
+  // Menu lateral: abrir/fechar
+  function abrirMenu(){
+    sidebar.classList.add('show');
+    overlay.classList.add('show');
+  }
+  function fecharMenu(){
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+  fab.addEventListener('click', abrirMenu);
+  document.getElementById('btnClose').addEventListener('click', () => { fecharMenu(); });
+  overlay.addEventListener('click', fecharMenu);
+
+  // Fechar menu automaticamente ao clicar em qualquer botão do menu (fallback geral)
+  sidebar.addEventListener('click', (e) => {
+    const target = e.target.closest('button');
+    if (target) fecharMenu();
+  });
+
+  // Inicialização
+  function init(){
     renderTabela();
     renderCardPaciente();
-  </script>
-  <footer class="footer">
-  <div class="footer-content">
-    <p>🌐 Site criado por: <strong>Carlos de Freitas Rocha (ACE)</strong></p>
-    <p>📅 Criado em <span id="ano"></span> • 📍 Itinga do Maranhão - MA, Brasil</p>
-    <!-- <div class="social">
-      <a href="https://github.com/" target="_blank" title="GitHub"><i class="fa-brands fa-github"></i></a>
-      <a href="https://www.linkedin.com/" target="_blank" title="LinkedIn"><i class="fa-brands fa-linkedin"></i></a>
-      <a href="mailto:seuemail@exemplo.com" title="E-mail"><i class="fa-solid fa-envelope"></i></a>
-    </div> -->
-  </div>
-</footer>
+    document.getElementById("ano").textContent = new Date().getFullYear();
+  }
+  init();
+  document.addEventListener('keydown', function (event) {
+                if (event.ctrlKey && event.shiftKey && event.key === 'I') {
+                    event.preventDefault();
+                }
+            });
 
-<style>
-  .footer{
-    text-align: center;
-    margin-top:30px;
-    background: linear-gradient(135deg, #1565c0, #0d47a1);
-    color:#fff;
-    text-align:center;
-    padding:20px 10px;
-    border-radius:12px;
-    box-shadow:0 -3px 10px rgba(0,0,0,0.2);
-  }
-  .footer-content p{
-    margin:6px 0;
-    font-size:14px;
-  }
-  .footer .social{
-    margin-top:10px;
-    display:flex;
-    justify-content:center;
-    gap:15px;
-  }
-  .footer .social a{
-    color:#fff;
-    font-size:20px;
-    transition:transform 0.2s, color 0.2s;
-  }
-  .footer .social a:hover{
-    transform:scale(1.2);
-    color:#f1c40f;
-  }
-</style>
-
-<script>
-  // Atualiza o ano automaticamente
-  document.getElementById("ano").textContent = new Date().getFullYear();
+            document.addEventListener('contextmenu', function (event) {
+                event.preventDefault();
+            });
+            document.addEventListener('keydown', function (e) {
+                if (e.ctrlKey && (e.key === 'u' || e.key === 'U')) {
+                    e.preventDefault();
+                }
+                if (e.key === 'F12') {
+                    e.preventDefault();
+                }
+            });
 </script>
-
 </body>
 </html>
